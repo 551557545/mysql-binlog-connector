@@ -40,13 +40,13 @@ public class HandShakeResponseCommand implements Command {
     private final String SHA2_PASSWORD = "caching_sha2_password";
     private final String MYSQL_NATIVE = "mysql_native_password";
 
-    private String userName;
+    private final String userName;
 
     private final InitialHandshakeProtocol handshakeProtocol;
 
-    private String password;
+    private final String password;
 
-    private boolean ssl;
+    private final boolean ssl;
 
     private final String dataBaseScram;
 
@@ -74,11 +74,74 @@ public class HandShakeResponseCommand implements Command {
 
     @Override
     public byte[] toByteArray() throws IOException {
-        if (SHA2_PASSWORD.equals(handshakeProtocol.getPluginName())) {
-            return CacheSha2PasswordPlugin.generatePasswordBytes(this);
+        ByteArrayIndexOutputStream out = new ByteArrayIndexOutputStream();
+        InitialHandshakeProtocol handshakeProtocol = this.handshakeProtocol;
+        int tempClientCapabilities = this.clientCapabilities;
+        boolean ssl = this.ssl;
+        String userName = this.userName;
+        String password = this.password;
+        String dataBaseScram = this.dataBaseScram;
+
+        if (handshakeProtocol.support41Protocol()) {
+            if (tempClientCapabilities == 0) {
+                tempClientCapabilities = CapabilitiesFlagsEnum.add(tempClientCapabilities,
+                        CapabilitiesFlagsEnum.CLIENT_LONG_FLAG,
+                        CapabilitiesFlagsEnum.CLIENT_PROTOCOL_41,
+                        CapabilitiesFlagsEnum.CLIENT_RESERVED2,
+                        CapabilitiesFlagsEnum.CLIENT_PLUGIN_AUTH,
+                        CapabilitiesFlagsEnum.CLIENT_PLUGIN_AUTH_LENENC_CLIENT_DATA
+                );
+                if (StrUtil.isNotBlank(dataBaseScram)) {
+                    tempClientCapabilities = CapabilitiesFlagsEnum.add(tempClientCapabilities, CapabilitiesFlagsEnum.CLIENT_CONNECT_WITH_DB);
+                }
+            }
+            if (!ssl) {
+                tempClientCapabilities = CapabilitiesFlagsEnum.canncel(tempClientCapabilities, CapabilitiesFlagsEnum.CLIENT_SSL);
+            } else {
+                tempClientCapabilities = CapabilitiesFlagsEnum.add(tempClientCapabilities, CapabilitiesFlagsEnum.CLIENT_SSL);
+            }
+            out.writeInt(tempClientCapabilities, 4);
+            out.writeInt(0, 4);
+            out.writeInt(handshakeProtocol.getCharsetNum(), 1);
+            // 写23个0
+            out.write(new byte[23]);
+            out.writeNullTerminatedString(userName);
+            // 这里开始是填入密码
+            // 基于mysql_native_password插件
+            byte[] encodePassword = null;
+
+            if (SHA2_PASSWORD.equals(handshakeProtocol.getPluginName())) {
+                encodePassword = CacheSha2PasswordPlugin.genarateCachingSha2Password(password, this.handshakeProtocol.getScramble());
+            } else {
+                encodePassword = NativePasswordPlugin.genarateNativeAuthPassword(password, this.handshakeProtocol.getScramble());
+            }
+
+            /**
+             * 不用判断CLIENT_PLUGIN_AUTH_LENENC_CLIENT_DATA
+             * mysql驱动自己写了一套outputStream的逻辑 维护一个byte数组
+             * 而我这里直接使用ByteArrayOutputStream，让他自己维护byte数组
+             * {@link com.mysql.cj.protocol.a.NativeAuthenticationProvider#createHandshakeResponsePacket}
+             */
+            out.writeInt(encodePassword.length, 1);
+            out.write(encodePassword);
+            if (CapabilitiesFlagsEnum.has(tempClientCapabilities, CapabilitiesFlagsEnum.CLIENT_CONNECT_WITH_DB)) {
+                out.writeNullTerminatedString(dataBaseScram);
+            }
+            if (CapabilitiesFlagsEnum.has(tempClientCapabilities, CapabilitiesFlagsEnum.CLIENT_PLUGIN_AUTH)) {
+                out.writeNullTerminatedString(handshakeProtocol.getPluginName());
+            }
+            if (CapabilitiesFlagsEnum.has(tempClientCapabilities, CapabilitiesFlagsEnum.CLIENT_CONNECT_ATTRS)) {
+
+            }
+            if (CapabilitiesFlagsEnum.has(tempClientCapabilities, CapabilitiesFlagsEnum.CLIENT_ZSTD_COMPRESSION_ALGORITHM)) {
+
+            }
         } else {
-            return NativePasswordPlugin.generatePasswordBytes(this);
+            out.writeInt(handshakeProtocol.getLowClientCapabilities(), 2);
+            out.writeInt(0, 3);
+            out.writeNullTerminatedString(userName);
         }
+        return out.toByteArray();
     }
 
     /**
@@ -142,9 +205,9 @@ public class HandShakeResponseCommand implements Command {
         // 新的斗争码
         String scramble = in.readStringTerminatedByZero();
 
-        if (SHA2_PASSWORD.equals(pluginName)) {
+        if (MYSQL_NATIVE.equals(pluginName)) {
             channel.sendCommand(() -> NativePasswordPlugin.genarateNativeAuthPassword(password, scramble));
-        } else if (MYSQL_NATIVE.equals(pluginName)) {
+        } else if (SHA2_PASSWORD.equals(pluginName)) {
             channel.sendCommand(() -> CacheSha2PasswordPlugin.genarateCachingSha2Password(password, scramble));
         }
         byte[] dataContent = channel.readDataContent();
@@ -240,69 +303,6 @@ public class HandShakeResponseCommand implements Command {
 
     private static class NativePasswordPlugin {
 
-        public static byte[] generatePasswordBytes(HandShakeResponseCommand command) throws IOException {
-            ByteArrayIndexOutputStream out = new ByteArrayIndexOutputStream();
-            InitialHandshakeProtocol handshakeProtocol = command.handshakeProtocol;
-            int tempClientCapabilities = command.clientCapabilities;
-            boolean ssl = command.ssl;
-            String userName = command.userName;
-            String password = command.password;
-            String dataBaseScram = command.dataBaseScram;
-
-            if (handshakeProtocol.support41Protocol()) {
-                if (tempClientCapabilities == 0) {
-                    tempClientCapabilities = CapabilitiesFlagsEnum.add(tempClientCapabilities,
-                            CapabilitiesFlagsEnum.CLIENT_LONG_FLAG,
-                            CapabilitiesFlagsEnum.CLIENT_PROTOCOL_41,
-                            CapabilitiesFlagsEnum.CLIENT_RESERVED2,
-                            CapabilitiesFlagsEnum.CLIENT_PLUGIN_AUTH
-                    );
-                    if (StrUtil.isNotBlank(dataBaseScram)) {
-                        tempClientCapabilities = CapabilitiesFlagsEnum.add(tempClientCapabilities, CapabilitiesFlagsEnum.CLIENT_CONNECT_WITH_DB);
-                    }
-                }
-                if (!ssl) {
-                    tempClientCapabilities = CapabilitiesFlagsEnum.canncel(tempClientCapabilities, CapabilitiesFlagsEnum.CLIENT_SSL);
-                } else {
-                    tempClientCapabilities = CapabilitiesFlagsEnum.add(tempClientCapabilities, CapabilitiesFlagsEnum.CLIENT_SSL);
-                }
-                out.writeInt(tempClientCapabilities, 4);
-                out.writeInt(0, 4);
-                out.writeInt(handshakeProtocol.getCharsetNum(), 1);
-                // 写23个0
-                out.write(new byte[23]);
-                out.writeNullTerminatedString(userName);
-                // 这里开始是填入密码
-                // 基于mysql_native_password插件
-                byte[] encodePassword = genarateNativeAuthPassword(password, handshakeProtocol.getScramble());
-                /**
-                 * 不用判断CLIENT_PLUGIN_AUTH_LENENC_CLIENT_DATA
-                 * mysql驱动自己写了一套outputStream的逻辑 维护一个byte数组
-                 * 而我这里直接使用ByteArrayOutputStream，让他自己维护byte数组
-                 * {@link com.mysql.cj.protocol.a.NativeAuthenticationProvider#createHandshakeResponsePacket}
-                 */
-                out.writeInt(encodePassword.length, 1);
-                out.write(encodePassword);
-                if (CapabilitiesFlagsEnum.has(tempClientCapabilities, CapabilitiesFlagsEnum.CLIENT_CONNECT_WITH_DB)) {
-                    out.writeNullTerminatedString(dataBaseScram);
-                }
-                if (CapabilitiesFlagsEnum.has(tempClientCapabilities, CapabilitiesFlagsEnum.CLIENT_PLUGIN_AUTH)) {
-                    out.writeNullTerminatedString(handshakeProtocol.getPluginName());
-                }
-                if (CapabilitiesFlagsEnum.has(tempClientCapabilities, CapabilitiesFlagsEnum.CLIENT_CONNECT_ATTRS)) {
-
-                }
-                if (CapabilitiesFlagsEnum.has(tempClientCapabilities, CapabilitiesFlagsEnum.CLIENT_ZSTD_COMPRESSION_ALGORITHM)) {
-
-                }
-            } else {
-                out.writeInt(handshakeProtocol.getLowClientCapabilities(), 2);
-                out.writeInt(0, 3);
-                out.writeNullTerminatedString(userName);
-            }
-            return out.toByteArray();
-        }
-
         /**
          * @throws IOException
          * @描述 使用sha1做hash
@@ -341,73 +341,8 @@ public class HandShakeResponseCommand implements Command {
     private static class CacheSha2PasswordPlugin {
 
         /**
-         * 生成密码，并写入流
-         * @param command
-         * @return
-         * @throws IOException
-         */
-        public static byte[] generatePasswordBytes(HandShakeResponseCommand command) throws IOException {
-            ByteArrayIndexOutputStream out = new ByteArrayIndexOutputStream();
-
-            int tempClientCapabilities = command.clientCapabilities;
-            InitialHandshakeProtocol handshakeProtocol = command.handshakeProtocol;
-            String userName = command.userName;
-            boolean ssl = command.ssl;
-            String password = command.password;
-            String dataBaseScram = command.dataBaseScram;
-
-            if (handshakeProtocol.support41Protocol()) {
-                if (tempClientCapabilities == 0) {
-                    tempClientCapabilities = CapabilitiesFlagsEnum.add(tempClientCapabilities,
-                            CapabilitiesFlagsEnum.CLIENT_LONG_FLAG,
-                            CapabilitiesFlagsEnum.CLIENT_PROTOCOL_41,
-                            CapabilitiesFlagsEnum.CLIENT_RESERVED2,
-                            CapabilitiesFlagsEnum.CLIENT_PLUGIN_AUTH,
-                            CapabilitiesFlagsEnum.CLIENT_PLUGIN_AUTH_LENENC_CLIENT_DATA
-                    );
-                    if (StrUtil.isNotBlank(dataBaseScram)) {
-                        tempClientCapabilities = CapabilitiesFlagsEnum.add(tempClientCapabilities, CapabilitiesFlagsEnum.CLIENT_CONNECT_WITH_DB);
-                    }
-                }
-                if (!ssl) {
-                    tempClientCapabilities = CapabilitiesFlagsEnum.canncel(tempClientCapabilities, CapabilitiesFlagsEnum.CLIENT_SSL);
-                } else {
-                    tempClientCapabilities = CapabilitiesFlagsEnum.add(tempClientCapabilities, CapabilitiesFlagsEnum.CLIENT_SSL);
-                }
-                out.writeInt(tempClientCapabilities, 4);
-                out.writeInt(0, 4);
-                out.writeInt(handshakeProtocol.getCharsetNum(), 1);
-                // 写23个0
-                out.write(new byte[23]);
-                out.writeNullTerminatedString(userName);
-                // 这里开始是填入密码
-                // 基于caching_sha2_password插件
-                byte[] encodePassword = genarateCachingSha2Password(password, handshakeProtocol.getScramble());
-                out.writeInt(encodePassword.length, 1);
-                out.write(encodePassword);
-
-                if (CapabilitiesFlagsEnum.has(tempClientCapabilities, CapabilitiesFlagsEnum.CLIENT_CONNECT_WITH_DB)) {
-                    out.writeNullTerminatedString(dataBaseScram);
-                }
-                if (CapabilitiesFlagsEnum.has(tempClientCapabilities, CapabilitiesFlagsEnum.CLIENT_PLUGIN_AUTH)) {
-                    out.writeNullTerminatedString(handshakeProtocol.getPluginName());
-                }
-                if (CapabilitiesFlagsEnum.has(tempClientCapabilities, CapabilitiesFlagsEnum.CLIENT_CONNECT_ATTRS)) {
-
-                }
-                if (CapabilitiesFlagsEnum.has(tempClientCapabilities, CapabilitiesFlagsEnum.CLIENT_ZSTD_COMPRESSION_ALGORITHM)) {
-
-                }
-            } else {
-                out.writeInt(handshakeProtocol.getLowClientCapabilities(), 2);
-                out.writeInt(0, 3);
-                out.writeNullTerminatedString(userName);
-            }
-            return out.toByteArray();
-        }
-
-        /**
          * 生成密码
+         *
          * @throws IOException
          * @描述 使用sha2做hash
          * @see <a href="https://dev.mysql.com/doc/dev/mysql-server/latest/page_caching_sha2_authentication_exchanges.html">相关文档</a>
