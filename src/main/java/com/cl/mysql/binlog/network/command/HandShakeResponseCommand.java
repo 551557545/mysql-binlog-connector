@@ -141,6 +141,7 @@ public class HandShakeResponseCommand implements Command {
             out.writeInt(0, 3);
             out.writeNullTerminatedString(userName);
         }
+        this.clientCapabilities = tempClientCapabilities;
         return out.toByteArray();
     }
 
@@ -161,7 +162,7 @@ public class HandShakeResponseCommand implements Command {
         if ((bytes[0] & 0xff) == 0xff) {
             // 不拷贝第一个字节
             bytes = Arrays.copyOfRange(bytes, 1, bytes.length);
-            ErrorPacket errorPacket = new ErrorPacket(bytes, this.handshakeProtocol);
+            ErrorPacket errorPacket = new ErrorPacket(bytes, this.clientCapabilities);
             throw new ServerException(
                     errorPacket.getErrorMessage(),
                     errorPacket.getErrorCode(),
@@ -169,7 +170,7 @@ public class HandShakeResponseCommand implements Command {
             );
         } else if ((bytes[0] & 0xff) == 0x0) {
             // 说明登录成功
-            OkPacket okPacket = new OkPacket(Arrays.copyOfRange(bytes, 1, bytes.length), this.handshakeProtocol);
+            OkPacket okPacket = new OkPacket(Arrays.copyOfRange(bytes, 1, bytes.length), this.clientCapabilities);
             log.info("【操作成功】ok_packet：{}", okPacket);
         } else if ((bytes[0] & 0xff) == 0xfe) {
             // 说明当前客户端使用的密码插件与用户密码存储在mysql里面的密码插件不一致，要做切换

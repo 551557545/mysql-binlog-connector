@@ -20,7 +20,7 @@ public class EOFPacket {
 
     private final String message;
 
-    public EOFPacket(byte[] bytes, InitialHandshakeProtocol handshakeProtocol) throws IOException {
+    public EOFPacket(byte[] bytes) throws IOException {
         ByteArrayIndexInputStream input = new ByteArrayIndexInputStream(bytes);
         this.warningNum = input.readInt(2);
         this.statusFlags = input.readInt(2);

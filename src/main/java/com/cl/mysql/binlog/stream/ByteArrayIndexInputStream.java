@@ -72,6 +72,7 @@ public class ByteArrayIndexInputStream extends InputStream {
     /**
      * 读取固定长度的string <br>
      * 即mysql通讯协议数据类型：string(len) 就是长度为len的字符串。
+     *
      * @param length
      * @return
      * @throws IOException
@@ -80,6 +81,14 @@ public class ByteArrayIndexInputStream extends InputStream {
         byte[] b = new byte[length];
         this.fillBytes(b, 0, length);
         return new String(b);
+    }
+
+    public String readLenencString() throws IOException {
+        int length = this.readLenencInteger().intValue();
+        if (length == 0) {
+            return "";
+        }
+        return this.readString(length);
     }
 
     /**
@@ -104,7 +113,7 @@ public class ByteArrayIndexInputStream extends InputStream {
      * @return long or null
      * @throws IOException in case of malformed number or EOF
      */
-    public Number readFixedLengthInteger() throws IOException {
+    public Number readLenencInteger() throws IOException {
         int b = this.read();
         if (b < 251) {
             return b;

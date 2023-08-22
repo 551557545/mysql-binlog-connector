@@ -1,5 +1,6 @@
 package com.cl.mysql.binlog.network.protocol.packet;
 
+import com.cl.mysql.binlog.constant.CapabilitiesFlagsEnum;
 import com.cl.mysql.binlog.network.protocol.InitialHandshakeProtocol;
 import com.cl.mysql.binlog.stream.ByteArrayIndexInputStream;
 import lombok.Getter;
@@ -36,13 +37,13 @@ public class ErrorPacket {
      * 调用之前 请去掉第一header字节
      *
      * @param bytes
-     * @param handshakeProtocol
+     * @param clientCapabilities
      * @throws IOException
      */
-    public ErrorPacket(byte[] bytes, InitialHandshakeProtocol handshakeProtocol) throws IOException {
+    public ErrorPacket(byte[] bytes, int clientCapabilities) throws IOException {
         ByteArrayIndexInputStream buffer = new ByteArrayIndexInputStream(bytes);
         this.errorCode = buffer.readInt(2);
-        if (handshakeProtocol != null && handshakeProtocol.support41Protocol()) {
+        if (CapabilitiesFlagsEnum.has(clientCapabilities, CapabilitiesFlagsEnum.CLIENT_PROTOCOL_41)) {
             if (buffer.read() == '#') {
                 this.sqlState = buffer.readString(5);
             }

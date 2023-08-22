@@ -2,7 +2,6 @@ package com.cl.mysql.binlog.network.protocol.packet;
 
 import com.cl.mysql.binlog.constant.CapabilitiesFlagsEnum;
 import com.cl.mysql.binlog.constant.ServerStatusEnum;
-import com.cl.mysql.binlog.network.protocol.InitialHandshakeProtocol;
 import com.cl.mysql.binlog.stream.ByteArrayIndexInputStream;
 import lombok.Getter;
 import lombok.ToString;
@@ -24,17 +23,17 @@ public class OkPacket {
     private final int numberOfWarnings;
     private final String message;
 
-    public OkPacket(byte[] bytes, InitialHandshakeProtocol handshakeProtocol) throws IOException {
+    public OkPacket(byte[] bytes, int clientCapabilities) throws IOException {
         ByteArrayIndexInputStream buffer = new ByteArrayIndexInputStream(bytes);
-        affectedRow = buffer.readFixedLengthInteger();// affected_rows
-        insertId = buffer.readFixedLengthInteger();// last insert-id
+        affectedRow = buffer.readLenencInteger();// affected_rows
+        insertId = buffer.readLenencInteger();// last insert-id
         statusFlags = buffer.readInt(2); // status_flags
-        if (handshakeProtocol.support41Protocol()) {
+        if (CapabilitiesFlagsEnum.has(clientCapabilities, CapabilitiesFlagsEnum.CLIENT_PROTOCOL_41)) {
             numberOfWarnings = buffer.readInt(2);// number of warnings
         } else {
             numberOfWarnings = 0;
         }
-        if ((handshakeProtocol.getClientCapabilities() & CapabilitiesFlagsEnum.CLIENT_SESSION_TRACK.getCode()) > 0) {
+        if (CapabilitiesFlagsEnum.has(clientCapabilities, CapabilitiesFlagsEnum.CLIENT_SESSION_TRACK)) {
             message = buffer.readStringTerminatedByZero();// message
         } else {
             message = "";

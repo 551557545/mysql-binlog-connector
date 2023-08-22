@@ -3,6 +3,7 @@ package com.cl.mysql.binlog.stream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 
 /**
  * @描述 msql协议为小端协议 输出流需要转成小端输出
@@ -11,6 +12,8 @@ import java.io.OutputStream;
  * @time: 2023-08-10 10:33
  */
 public class ByteArrayIndexOutputStream extends OutputStream {
+
+    private byte[] b ;
 
     private final OutputStream out;
 
@@ -54,6 +57,27 @@ public class ByteArrayIndexOutputStream extends OutputStream {
         }
     }
 
+    /**
+     * Protocol::LengthEncodedInteger
+     * <a href="https://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_basic_dt_integers.html#sect_protocol_basic_dt_int_le">文档</a>
+     *
+     * @param value
+     */
+    public void writeLenencInt(long value) throws IOException {
+        if (value >= 0 && value <= 250) {
+            this.writeLong(value, 1);
+        } else if (value >= 251 && value < 65536L) {
+            this.writeLong(0xFC, 1);
+            this.writeLong(value, 2);
+        } else if (value >= 65536L && value < 16777216L) {
+            this.writeLong(0xFD, 1);
+            this.writeLong(value, 3);
+        } else {
+            this.writeLong(0xFE, 1);
+            this.writeLong(value, 8);
+        }
+    }
+
     public void writeLong(long value, int length) throws IOException {
         for (int i = 0; i < length; i++) {
             // 32位 一个字节 8位 以1111 1111 去做与运算  先将低位写入低地址
@@ -68,6 +92,12 @@ public class ByteArrayIndexOutputStream extends OutputStream {
     public void writeNullTerminatedString(String value) throws IOException {
         this.write(value.getBytes());
         this.writeInt(0, 1);
+    }
+
+    public void writeLenencString(String value, Charset charset) throws IOException {
+        byte[] strBytes = value.getBytes(charset);
+        this.writeInt(strBytes.length, 2);
+        this.write(strBytes);
     }
 
     @Override

@@ -1,23 +1,21 @@
 package com.cl.mysql.binlog.network;
 
 import com.cl.mysql.binlog.constant.CapabilitiesFlagsEnum;
-import com.cl.mysql.binlog.exception.ServerException;
-import com.cl.mysql.binlog.network.command.Command;
+import com.cl.mysql.binlog.constant.Sql;
+import com.cl.mysql.binlog.network.command.ComQueryCommand;
 import com.cl.mysql.binlog.network.command.HandShakeResponseCommand;
 import com.cl.mysql.binlog.network.command.SSLCommand;
 import com.cl.mysql.binlog.network.command.SSLProtocol41Command;
 import com.cl.mysql.binlog.network.protocol.InitialHandshakeProtocol;
-import com.cl.mysql.binlog.network.protocol.packet.EOFPacket;
-import com.cl.mysql.binlog.network.protocol.packet.ErrorPacket;
-import com.cl.mysql.binlog.network.protocol.packet.OkPacket;
+import com.cl.mysql.binlog.network.protocol.packet.TextResultSetPacket;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 
 /**
  * @description: 连接器
@@ -34,6 +32,10 @@ public class MysqlBinLogConnector {
     @Setter(AccessLevel.PRIVATE)
     private InitialHandshakeProtocol handshakeProtocol;
 
+    private final String host;
+
+    private final int port;
+
     private final String userName;
 
     private final String password;
@@ -44,7 +46,12 @@ public class MysqlBinLogConnector {
 
     private boolean successLogin;
 
-    private MysqlBinLogConnector(String userName, String password, boolean ssl, String dataBaseScram) {
+    @Getter
+    private int clientCapabilities;
+
+    private MysqlBinLogConnector(String host, int port, String userName, String password, boolean ssl, String dataBaseScram) {
+        this.host = host;
+        this.port = port;
         this.userName = userName;
         this.password = password;
         this.ssl = ssl;
@@ -67,7 +74,7 @@ public class MysqlBinLogConnector {
      * @throws KeyManagementException
      */
     public static MysqlBinLogConnector openConnect(String host, int port, String userName, String password, boolean ssl, String dataBaseScram) throws IOException, NoSuchAlgorithmException, KeyManagementException {
-        MysqlBinLogConnector mysqlBinLogConnector = new MysqlBinLogConnector(userName, password, ssl, dataBaseScram);
+        MysqlBinLogConnector mysqlBinLogConnector = new MysqlBinLogConnector(host, port, userName, password, ssl, dataBaseScram);
         mysqlBinLogConnector.setChannel(new PacketChannel(host, port));
         // 解析握手协议
         byte[] bytes = mysqlBinLogConnector.readDataContent();
@@ -120,14 +127,23 @@ public class MysqlBinLogConnector {
                 this.dataBaseScram,
                 this.channel
         );
+        command.setClientCapabilities(this.clientCapabilities);
         command.send();
+        this.clientCapabilities = command.getClientCapabilities();
         successLogin = true;
         log.info("mysql连接成功");
     }
 
-    public void sendCommand(Command command) {
-
+    /**
+     * 请求mysql服务器获取binlog的dump
+     */
+    public void sendComBingLogDump() throws IOException {
+        ComQueryCommand queryCommand = new ComQueryCommand(Sql.show_master_status);
+        channel.sendCommand(queryCommand);
+        TextResultSetPacket textResultSetPacket = channel.readTextResultSetPacket(this.clientCapabilities);
+        //TODO 做binlog监听
     }
+
 
     private byte[] readDataContent() throws IOException {
         return channel.readDataContent();
@@ -141,23 +157,11 @@ public class MysqlBinLogConnector {
      * @throws IOException
      */
     private void checkPacket(byte[] bytes) throws IOException {
-        // 如果错误的话 会返回0xff
-        if ((bytes[0] & 0xff) == 0xff) {
-            // 不拷贝第一个字节
-            bytes = Arrays.copyOfRange(bytes, 1, bytes.length);
-            ErrorPacket errorPacket = new ErrorPacket(bytes, this.handshakeProtocol);
-            throw new ServerException(
-                    errorPacket.getErrorMessage(),
-                    errorPacket.getErrorCode(),
-                    errorPacket.getSqlState()
-            );
-        } else if ((bytes[0] & 0xff) == 0x0) {
-            OkPacket okPacket = new OkPacket(Arrays.copyOfRange(bytes, 1, bytes.length), this.handshakeProtocol);
-            log.info("【操作成功】ok_packet：{}", okPacket);
-        } else if ((bytes[0] & 0xff) == 0xfe) {// 文档上说等于0xfe为eof包 默认意思是无符号的意思，要用0xff相与
-            EOFPacket eofPacket = new EOFPacket(Arrays.copyOfRange(bytes, 1, bytes.length), this.handshakeProtocol);
-            log.warn("警告：{}", eofPacket);
-        }
+        this.channel.checkPacket(bytes, this.clientCapabilities);
+    }
+
+    public void addClientCapabilities(CapabilitiesFlagsEnum e) {
+        this.clientCapabilities = CapabilitiesFlagsEnum.add(this.clientCapabilities, e);
     }
 
 
