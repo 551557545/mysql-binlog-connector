@@ -76,6 +76,15 @@ public class PacketChannel {
         return this.inputStream.readBytes(length);
     }
 
+    public byte[] readBinlogStream() throws IOException {
+        int length = this.inputStream.readInt(3);
+        if(length == -1){
+            throw new RuntimeException("mysql服务器已断开连接");
+        }
+        int sequence = this.inputStream.read();
+        return this.inputStream.readBytes(length);
+    }
+
     /**
      * 读取结果包<a href="https://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_com_query_response_text_resultset.html">相关文档</a><br>
      * <li>第一个包：列长度包 只有一个列的长度</li>
@@ -192,6 +201,7 @@ public class PacketChannel {
         this.outputStream = new ByteArrayIndexOutputStream(sslSocket.getOutputStream());
         this.sslSocket = true;
     }
+
 
 
 }

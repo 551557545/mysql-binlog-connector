@@ -43,7 +43,7 @@ public class InitialHandshakeProtocol {
     /**
      * 服务器为客户端分配连接线程id
      */
-    private final long threadId;
+    private final int threadId;
     /**
      * 挑战字符串前缀
      */
@@ -96,7 +96,7 @@ public class InitialHandshakeProtocol {
         // mysql服务器版本
         this.serverVersion = buffer.readStringTerminatedByZero();
         // mysql服务器连接分配的线程id
-        this.threadId = buffer.readLong(4);
+        this.threadId = buffer.readInt(4);
         // 挑战字符前缀
         this.scramblePrefix = buffer.readString(8);
         // 跳过一个0

@@ -11,14 +11,24 @@ public enum CommandTypeEnum {
      * Currently refused by the server.
      */
     COM_SLEEP,
-
-
     COM_QUIT,
-
-
     COM_INIT_DB,
-
     COM_QUERY,
+    COM_FIELD_LIST,
+    COM_CREATE_DB,
+    COM_DROP_DB,
+    COM_REFRESH,
+    COM_DEPRECATED_1,
+    COM_STATISTICS,
+    COM_PROCESS_INFO,
+    COM_CONNECT,
+    COM_PROCESS_KILL,
+    COM_DEBUG,
+    COM_PING,
+    COM_TIME,
+    COM_DELAYED_INSERT,
+    COM_CHANGE_USER,
+    COM_BINLOG_DUMP,
     ;
 
 }

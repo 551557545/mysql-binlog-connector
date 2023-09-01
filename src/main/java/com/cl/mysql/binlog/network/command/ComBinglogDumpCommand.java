@@ -1,5 +1,6 @@
 package com.cl.mysql.binlog.network.command;
 
+import com.cl.mysql.binlog.constant.CommandTypeEnum;
 import com.cl.mysql.binlog.stream.ByteArrayIndexOutputStream;
 
 import java.io.IOException;
@@ -15,10 +16,6 @@ public class ComBinglogDumpCommand implements Command {
      * binlog文件的位点
      */
     private final int binlogPos;
-    /**
-     *
-     */
-    private final int flags;
 
     /**
      * 该服务器的服务器id，应该是握手协议返回的threadId
@@ -30,9 +27,8 @@ public class ComBinglogDumpCommand implements Command {
      */
     private final String binlogFileName;
 
-    public ComBinglogDumpCommand(int binlogPos, int flags, int serverId, String binlogFileName) {
+    public ComBinglogDumpCommand(String binlogFileName, int binlogPos, int serverId) {
         this.binlogPos = binlogPos;
-        this.flags = flags;
         this.serverId = serverId;
         this.binlogFileName = binlogFileName;
     }
@@ -40,10 +36,12 @@ public class ComBinglogDumpCommand implements Command {
     @Override
     public byte[] toByteArray() throws IOException {
         ByteArrayIndexOutputStream out = new ByteArrayIndexOutputStream();
-        out.writeInt(0x12, 1);
+        out.writeInt(CommandTypeEnum.COM_BINLOG_DUMP.ordinal(), 1);
         out.writeInt(this.binlogPos, 4);
-        out.writeInt(this.flags,2);
-        out.writeInt(this.serverId,4);
+        // BINLOG_DUMP_NON_BLOCK = 1  If there is no more events to send send a ERR_Packet instead of blocking the connection.
+        // 当没有binlog事件的时候 ：如果填1 那么会发一个err_packet过来，如果填0，则会阻塞
+        out.writeInt(0, 2);
+        out.writeInt(this.serverId, 4);
         out.writeNullTerminatedString(this.binlogFileName);
         return out.toByteArray();
     }

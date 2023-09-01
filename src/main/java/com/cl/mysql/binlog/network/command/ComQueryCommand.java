@@ -25,7 +25,7 @@ public class ComQueryCommand implements Command {
         this.clientCapabilities = 0;
     }
 
-    public ComQueryCommand(String sql, int clientCapabilities, Map<String, String> params) {
+    private ComQueryCommand(String sql, int clientCapabilities, Map<String, String> params) {
         this.sql = sql;
         this.clientCapabilities = clientCapabilities;
         this.params = params;
@@ -36,6 +36,7 @@ public class ComQueryCommand implements Command {
         ByteBufferLittleEndianOutputStream out = new ByteBufferLittleEndianOutputStream();
         out.writeInt(CommandTypeEnum.COM_QUERY.ordinal(), 1);
         int numParams = params != null ? params.size() : 0;
+        // TODO 传参逻辑 未经过测试
         if (CapabilitiesFlagsEnum.has(clientCapabilities, CapabilitiesFlagsEnum.CLIENT_QUERY_ATTRIBUTES)) {
             out.writeLenencInt(numParams);// parameter_count：Number of parameters
             out.writeLenencInt(1);// parameter_set_count：Number of parameter sets. Currently always 1

@@ -1,11 +1,11 @@
 package com.cl.mysql.binlog.network;
 
+import cn.hutool.core.util.StrUtil;
+import com.cl.mysql.binlog.constant.BinlogCheckSumEnum;
 import com.cl.mysql.binlog.constant.CapabilitiesFlagsEnum;
 import com.cl.mysql.binlog.constant.Sql;
-import com.cl.mysql.binlog.network.command.ComQueryCommand;
-import com.cl.mysql.binlog.network.command.HandShakeResponseCommand;
-import com.cl.mysql.binlog.network.command.SSLCommand;
-import com.cl.mysql.binlog.network.command.SSLProtocol41Command;
+import com.cl.mysql.binlog.entity.BinlogInfo;
+import com.cl.mysql.binlog.network.command.*;
 import com.cl.mysql.binlog.network.protocol.InitialHandshakeProtocol;
 import com.cl.mysql.binlog.network.protocol.packet.TextResultSetPacket;
 import lombok.AccessLevel;
@@ -134,14 +134,53 @@ public class MysqlBinLogConnector {
         log.info("mysql连接成功");
     }
 
+    public void sendComBingLogDump() throws IOException {
+        this.sendComBingLogDump(null, -1);
+    }
+
     /**
      * 请求mysql服务器获取binlog的dump
      */
-    public void sendComBingLogDump() throws IOException {
-        ComQueryCommand queryCommand = new ComQueryCommand(Sql.show_master_status);
+    public void sendComBingLogDump(String binlogFileName, int binlogPosition) throws IOException {
+        if (StrUtil.isBlank(binlogFileName) && binlogPosition <= 0) {
+            ComQueryCommand queryCommand = new ComQueryCommand(Sql.show_master_status);
+            channel.sendCommand(queryCommand);
+            TextResultSetPacket textResultSetPacket = channel.readTextResultSetPacket(this.clientCapabilities);
+            BinlogInfo binlogInfo = new BinlogInfo(textResultSetPacket);
+            binlogFileName = binlogInfo.getFileName();
+            binlogPosition = binlogInfo.getPosition();
+        }
+        BinlogCheckSumEnum checkSum = this.fecthCheckSum();
+        if (checkSum != BinlogCheckSumEnum.NONE) {
+            this.setCheckSum(checkSum);
+        }
+
+        ComBinglogDumpCommand command = new ComBinglogDumpCommand(binlogFileName, binlogPosition, this.handshakeProtocol.getThreadId());
+        channel.sendCommand(command);
+        this.checkPacket(this.readDataContent());
+        this.listenBinlog();
+    }
+
+    private void listenBinlog() throws IOException {
+        while (true) {
+            byte[] bytes = channel.readBinlogStream();
+            this.checkPacket(bytes);
+            System.out.println();
+        }
+    }
+
+    private BinlogCheckSumEnum fecthCheckSum() throws IOException {
+        ComQueryCommand queryCommand = new ComQueryCommand(Sql.show_global_variables_like_binlog_checksum);
         channel.sendCommand(queryCommand);
         TextResultSetPacket textResultSetPacket = channel.readTextResultSetPacket(this.clientCapabilities);
-        //TODO 做binlog监听
+        return BinlogCheckSumEnum.getEnum(textResultSetPacket);
+    }
+
+    private void setCheckSum(BinlogCheckSumEnum checkSum) throws IOException {
+        ComQueryCommand queryCommand = new ComQueryCommand(Sql.set_master_binlog_checksum_global_binlog_checksum);
+        channel.sendCommand(queryCommand);
+        this.checkPacket(channel.readDataContent());
+        System.out.println(1);
     }
 
 
