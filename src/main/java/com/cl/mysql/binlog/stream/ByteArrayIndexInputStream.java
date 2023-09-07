@@ -60,6 +60,12 @@ public class ByteArrayIndexInputStream extends InputStream {
         return result;
     }
 
+    public byte[] readBytes() throws IOException {
+        byte[] buffer = new byte[512 * 1024];
+        in.read(buffer,0,buffer.length);
+        return buffer;
+    }
+
     public long readLong(int length) throws IOException {
         long result = 0;
         for (int i = 0; i < length; i++) {

@@ -16,10 +16,17 @@ import lombok.Getter;
 public enum BinlogCheckSumEnum {
 
     NONE(0),
+    /**
+     * CRC32函数返回校验值的无符号整数（32位）
+     */
     CRC32(4),
     ;
 
     private final int length;
+
+    public static BinlogCheckSumEnum getByOrdinal(int ordinal){
+        return values()[ordinal];
+    }
 
     public static BinlogCheckSumEnum getEnum(TextResultSetPacket packet) {
         if (CollectionUtil.isNotEmpty(packet.getResultRowPacketList())) {

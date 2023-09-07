@@ -1,6 +1,8 @@
 package com.cl.mysql.binlog.network;
 
 import cn.hutool.core.util.StrUtil;
+import com.cl.mysql.binlog.binlogEvent.BinlogHeader;
+import com.cl.mysql.binlog.binlogEvent.Event;
 import com.cl.mysql.binlog.constant.BinlogCheckSumEnum;
 import com.cl.mysql.binlog.constant.CapabilitiesFlagsEnum;
 import com.cl.mysql.binlog.constant.Sql;
@@ -8,6 +10,7 @@ import com.cl.mysql.binlog.entity.BinlogInfo;
 import com.cl.mysql.binlog.network.command.*;
 import com.cl.mysql.binlog.network.protocol.InitialHandshakeProtocol;
 import com.cl.mysql.binlog.network.protocol.packet.TextResultSetPacket;
+import com.cl.mysql.binlog.stream.ByteArrayIndexInputStream;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -48,6 +51,8 @@ public class MysqlBinLogConnector {
 
     @Getter
     private int clientCapabilities;
+
+    private BinlogCheckSumEnum checkSum;
 
     private MysqlBinLogConnector(String host, int port, String userName, String password, boolean ssl, String dataBaseScram) {
         this.host = host;
@@ -139,7 +144,7 @@ public class MysqlBinLogConnector {
     }
 
     /**
-     * 请求mysql服务器获取binlog的dump
+     * 请求mysql服务器获取binlog的dump线程
      */
     public void sendComBingLogDump(String binlogFileName, int binlogPosition) throws IOException {
         if (StrUtil.isBlank(binlogFileName) && binlogPosition <= 0) {
@@ -150,25 +155,36 @@ public class MysqlBinLogConnector {
             binlogFileName = binlogInfo.getFileName();
             binlogPosition = binlogInfo.getPosition();
         }
-        BinlogCheckSumEnum checkSum = this.fecthCheckSum();
-        if (checkSum != BinlogCheckSumEnum.NONE) {
-            this.setCheckSum(checkSum);
+        // 查询当前mysql服务器的checkSum
+        this.checkSum = this.fecthCheckSum();
+        if (this.checkSum != BinlogCheckSumEnum.NONE) {
+            // 设置会话checkSum
+            this.setCheckSum(this.checkSum);
         }
-
+        // 设置从服务器连接的uuid
+        this.setSlaveUUID();
+        // 向dump线程发送注册指令
         ComBinglogDumpCommand command = new ComBinglogDumpCommand(binlogFileName, binlogPosition, this.handshakeProtocol.getThreadId());
         channel.sendCommand(command);
-        this.checkPacket(this.readDataContent());
+        //this.checkPacket(this.readDataContent());
         this.listenBinlog();
     }
 
     private void listenBinlog() throws IOException {
         while (true) {
             byte[] bytes = channel.readBinlogStream();
-            this.checkPacket(bytes);
-            System.out.println();
+            ByteArrayIndexInputStream indexInputStream = this.checkBinlogPacket(bytes);
+            Event event = Event.V4Deserialization(indexInputStream, this.checkSum);
+            System.out.println(1);
         }
     }
 
+    /**
+     * 查询当前mysql数据库checksum信息
+     *
+     * @return
+     * @throws IOException
+     */
     private BinlogCheckSumEnum fecthCheckSum() throws IOException {
         ComQueryCommand queryCommand = new ComQueryCommand(Sql.show_global_variables_like_binlog_checksum);
         channel.sendCommand(queryCommand);
@@ -176,11 +192,46 @@ public class MysqlBinLogConnector {
         return BinlogCheckSumEnum.getEnum(textResultSetPacket);
     }
 
+    /**
+     * 设置会话的checkSum
+     * 设置服务端返回结果时不做编码转化，直接按照数据库的二进制编码进行发送，由客户端自己根据需求进行编码转化
+     * <p>
+     * set @master_binlog_checksum= @@global.binlog_checksum
+     * <p>
+     * mysql5.6针对checksum支持需要设置session变量如果不设置会出现错误：
+     * <p>
+     * Slave can not handle replication events with the checksum that master is configured to log
+     * <p>
+     * 但也不能乱设置，需要和mysql server的checksum配置一致，不然RotateLogEvent会出现乱码。'@@global.binlog_checksum'需要去掉单引号,在mysql 5.6.29下导致master退出
+     * <p>
+     * <a href="https://blog.csdn.net/qq_24313635/article/details/122681407">参考博客1</a>
+     * <p>
+     * <a href="https://www.jianshu.com/p/0957a89d4fb4">参考博客2</a>
+     *
+     * @param checkSum
+     * @throws IOException
+     */
     private void setCheckSum(BinlogCheckSumEnum checkSum) throws IOException {
+        log.info("【设置check sum】start");
         ComQueryCommand queryCommand = new ComQueryCommand(Sql.set_master_binlog_checksum_global_binlog_checksum);
         channel.sendCommand(queryCommand);
         this.checkPacket(channel.readDataContent());
-        System.out.println(1);
+        log.info("【设置check sum】end");
+    }
+
+    /**
+     * mysql5.6需要设置slave_uuid避免被server kill链接
+     * <p>
+     * <a href="https://github.com/alibaba/canal/issues/284">参考</a>
+     *
+     * @throws IOException
+     */
+    private void setSlaveUUID() throws IOException {
+        log.info("【设置slave uuid】start");
+        ComQueryCommand queryCommand = new ComQueryCommand(Sql.set_slave_uuid);
+        channel.sendCommand(queryCommand);
+        this.checkPacket(channel.readDataContent());
+        log.info("【设置slave uuid】end");
     }
 
 
@@ -197,6 +248,12 @@ public class MysqlBinLogConnector {
      */
     private void checkPacket(byte[] bytes) throws IOException {
         this.channel.checkPacket(bytes, this.clientCapabilities);
+    }
+
+    private ByteArrayIndexInputStream checkBinlogPacket(byte[] bytes) throws IOException {
+        this.checkPacket(bytes);
+        ByteArrayIndexInputStream indexInputStream = new ByteArrayIndexInputStream(bytes);
+        return indexInputStream;
     }
 
     public void addClientCapabilities(CapabilitiesFlagsEnum e) {
