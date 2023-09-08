@@ -4,8 +4,12 @@ import com.cl.mysql.binlog.binlogEvent.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
- * @description:
+ * @description: <a href="https://dev.mysql.com/doc/dev/mysql-server/latest/binlog__event_8h.html">官方文档</a> ctrl+f搜：
+ * Enumerations
  * @author: liuzijian
  * @time: 2023-09-05 16:34
  */
@@ -13,49 +17,64 @@ import lombok.Getter;
 @Getter
 public enum BinlogEventEnum {
 
-    BINLOG_EVENT_HEADER(19, 19, 13, null),
-    START_EVENT_V3(19, 19, 13, null),
-    QUERY_EVENT(56, 56, 56, null),
-    STOP_EVENT(0, 0, 0, null),
-    ROTATE_EVENT(8, 8, 0, RotateEvent.class),
-    INTVAR_EVENT(0, 0, 0, IntvarEvent.class),
-    LOAD_EVENT(18, 18, 18, null),
-    SLAVE_EVENT(0, 0, 0, null),
-    CREATE_FILE_EVENT(4, 4, 4, null),
-    APPEND_BLOCK_EVENT(4, 4, 4, null),
-    EXEC_LOAD_EVENT(4, 4, 4, null),
-    DELETE_FILE_EVENT(4, 4, 4, null),
-    NEW_LOAD_EVENT(18, 18, 18, null),
-    RAND_EVENT(0, 0, 0, null),
-    USER_VAR_EVENT(0, 0, 0, null),
-    FORMAT_DESCRIPTION_EVENT(84, -1, -1, FormatDescriptionEvent.class),
-    XID_EVENT(0, -1, -1, XIDEvent.class),
-    BEGIN_LOAD_QUERY_EVENT(4, -1, -1, null),
-    EXECUTE_LOAD_QUERY_EVENT(26, -1, -1, null),
-    TABLE_MAP_EVENT(8, -1, -1, null),
-    DELETE_ROWS_EVENTv0(0, -1, -1, null),
-    UPDATE_ROWS_EVENTv0(0, -1, -1, null),
-    WRITE_ROWS_EVENTv0(0, -1, -1, null),
-    DELETE_ROWS_EVENTv1(8, -1, -1, null),
-    UPDATE_ROWS_EVENTv1(8, -1, -1, null),
-    WRITE_ROWS_EVENTv1(8, -1, -1, null),
-    INCIDENT_EVENT(2, -1, -1, null),
-    HEARTBEAT_EVENT(0, -1, -1, null),
-    DELETE_ROWS_EVENTv2(10, -1, -1, null),
-    UPDATE_ROWS_EVENTv2(10, -1, -1, null),
-    WRITE_ROWS_EVENTv2(10, -1, -1, null),
+    UNKNOWN_EVENT(0, null),
+    START_EVENT_V3(1, null),
+    QUERY_EVENT(2, QueryEvent.class),
+    STOP_EVENT(3, null),
+    ROTATE_EVENT(4, RotateEvent.class),
+    INTVAR_EVENT(5, IntvarEvent.class),
+    SLAVE_EVENT(7, null),
+    APPEND_BLOCK_EVENT(9, null),
+    DELETE_FILE_EVENT(11, null),
+    RAND_EVENT(13, null),
+    USER_VAR_EVENT(14, null),
+    FORMAT_DESCRIPTION_EVENT(15, FormatDescriptionEvent.class),
+    XID_EVENT(16, XIDEvent.class),
+    BEGIN_LOAD_QUERY_EVENT(17, null),
+    EXECUTE_LOAD_QUERY_EVENT(18, null),
+    TABLE_MAP_EVENT(19, TableMapEvent.class),
+    WRITE_ROWS_EVENT_V1(23, null),
+    UPDATE_ROWS_EVENT_V1(24, null),
+    DELETE_ROWS_EVENT_V1(25, null),
+    /**
+     * INCIDENT_EVENT：
+     * Something out of the ordinary happened on the master.
+     * <p>
+     * 主mysql可能发生了错误
+     */
+    INCIDENT_EVENT(26, IncidentEvent.class),
+    HEARTBEAT_LOG_EVENT(27, null),
+    IGNORABLE_LOG_EVENT(28, null),
+    ROWS_QUERY_LOG_EVENT(29, null),
+    WRITE_ROWS_EVENT(30, null),
+    UPDATE_ROWS_EVENT(31, null),
+    DELETE_ROWS_EVENT(32, null),
+    GTID_LOG_EVENT(33, null),
+    ANONYMOUS_GTID_LOG_EVENT(34, null),
+    PREVIOUS_GTIDS_LOG_EVENT(35, null),
+    TRANSACTION_CONTEXT_EVENT(36, null),
+    VIEW_CHANGE_EVENT(37, null),
+    XA_PREPARE_LOG_EVENT(38, null),
+    PARTIAL_UPDATE_ROWS_EVENT(39, null),
+    TRANSACTION_PAYLOAD_EVENT(40, null),
+    HEARTBEAT_LOG_EVENT_V2(41, HeartbeatLogEventV2.class),
+    ENUM_END_EVENT(-1, null),
     ;
 
-    /**
-     * header长度
-     */
-    private final int v4_length;
-    private final int v3_length;
-    private final int v1_length;
+    private final int code;
     private final Class<? extends AbstractBinlogEvent> binlogEventClass;
 
-    public static BinlogEventEnum getByOrdinal(int ordinal) {
-        return values()[ordinal];
+    private final static Map<Integer, BinlogEventEnum> cache;
+
+    static {
+        cache = new HashMap<>(BinlogEventEnum.values().length);
+        for (BinlogEventEnum e : values()) {
+            cache.put(e.getCode(), e);
+        }
+    }
+
+    public static BinlogEventEnum getByCode(int code) {
+        return cache.getOrDefault(code, UNKNOWN_EVENT);
     }
 
 }

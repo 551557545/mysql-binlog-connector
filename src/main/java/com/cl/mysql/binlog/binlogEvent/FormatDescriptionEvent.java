@@ -43,8 +43,8 @@ public class FormatDescriptionEvent extends AbstractBinlogEvent {
     private final Integer checkSum;
 
 
-    public FormatDescriptionEvent(ByteArrayIndexInputStream in, int bodyLength) throws IOException {
-        super(in, bodyLength);
+    public FormatDescriptionEvent(ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
+        super(in, bodyLength, checkSum);
         /**
          * The layout of Format_description_event data part is as follows:
          * Format_description_event数据部分的布局如下:

@@ -39,7 +39,7 @@ public class Event {
         int logPos = indexInputStream.readInt(4); // position of the next event
         int flags = indexInputStream.readInt(2); // See Binlog Event Header Flags
 
-        BinlogEventEnum eventEnum = BinlogEventEnum.getByOrdinal(eventType);
+        BinlogEventEnum eventEnum = BinlogEventEnum.getByCode(eventType);
 
         BinlogHeader header = new BinlogHeader();
         header.setTimeStamp(new Date(timeStamp * 1000L));
@@ -81,10 +81,10 @@ public class Event {
              */
             int commonHdrLength = 19; // （F）
             int checkSumLength = checkSum.getLength();   // FormatDescriptionEvent：（A）+ (V) 其他事件：（V）
-            if(eventEnum == BinlogEventEnum.FORMAT_DESCRIPTION_EVENT){
+            if (eventEnum == BinlogEventEnum.FORMAT_DESCRIPTION_EVENT) {
                 checkSumLength += 1;// 加上（A）位长度
             }
-            body = ReflectUtil.newInstance(eventEnum.getBinlogEventClass(), indexInputStream, eventSize - commonHdrLength - checkSumLength);
+            body = ReflectUtil.newInstance(eventEnum.getBinlogEventClass(), indexInputStream, eventSize - commonHdrLength - checkSumLength, checkSum);
         }
         return new Event(header, body);
     }

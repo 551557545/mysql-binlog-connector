@@ -1,12 +1,12 @@
 package com.cl.mysql.binlog.binlogEvent;
 
+import com.cl.mysql.binlog.constant.BinlogCheckSumEnum;
 import com.cl.mysql.binlog.stream.ByteArrayIndexInputStream;
 import lombok.Getter;
 
 import java.io.IOException;
 
 /**
- *
  * @description: <a href="https://dev.mysql.com/doc/dev/mysql-server/latest/classbinary__log_1_1Rotate__event.html">文档</a>
  * <p>
  * The rotate event is added to the binlog as last event to tell the reader what binlog to request next.
@@ -34,11 +34,9 @@ public class RotateEvent extends AbstractBinlogEvent {
      */
     private final String newLogIdent;
 
-    public RotateEvent(ByteArrayIndexInputStream in, int bodyLength) throws IOException {
-        super(in, bodyLength);
+    public RotateEvent(ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
+        super(in, bodyLength, checkSum);
         this.position = in.readInt(8);
         this.newLogIdent = in.readString(bodyLength - 8);
-        byte[] bytes = in.readBytes();
-        System.out.println(1);
     }
 }
