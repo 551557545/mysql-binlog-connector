@@ -143,22 +143,6 @@ public enum TableMapColumnTypeEnum {
      * </p>
      */
     MYSQL_TYPE_GEOMETRY(255, 1),
-    /**
-     * <li>The first byte holds the MySQL type for the elements.</li>
-     * <li>
-     * The following 0, 1, 2, or 3 bytes holds the metadata for the MySQL type for the elements. <br>
-     * The contents of these bytes depends on the element type, as described in the other rows of this table.
-     * </li>
-     * <p>
-     * <li>
-     * 第一个字节保存元素的MySQL类型。
-     * </li>
-     * <li>
-     * 下面的0、1、2或3个字节保存了元素的MySQL类型的元数据。这些字节的内容取决于元素类型，如该表的其他行所述。
-     * </li>
-     * </p>
-     */
-    MYSQL_TYPE_TYPED_ARRAY(15, 4),
 
     ;
 
@@ -191,6 +175,15 @@ public enum TableMapColumnTypeEnum {
             case MYSQL_TYPE_LONGLONG:
             case MYSQL_TYPE_INT24:
             case MYSQL_TYPE_NEWDECIMAL:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public boolean isEnumColumn() {
+        switch (this) {
+            case MYSQL_TYPE_ENUM:
                 return true;
             default:
                 return false;

@@ -1,9 +1,9 @@
 package com.cl.mysql.binlog.network;
 
 import cn.hutool.core.util.StrUtil;
-import com.cl.mysql.binlog.binlogEvent.BinlogHeader;
 import com.cl.mysql.binlog.binlogEvent.Event;
 import com.cl.mysql.binlog.constant.BinlogCheckSumEnum;
+import com.cl.mysql.binlog.constant.BinlogRowMetadataEnum;
 import com.cl.mysql.binlog.constant.CapabilitiesFlagsEnum;
 import com.cl.mysql.binlog.constant.Sql;
 import com.cl.mysql.binlog.entity.BinlogInfo;
@@ -53,6 +53,8 @@ public class MysqlBinLogConnector {
     private int clientCapabilities;
 
     private BinlogCheckSumEnum checkSum;
+
+    private BinlogRowMetadataEnum rowMetadata;
 
     private MysqlBinLogConnector(String host, int port, String userName, String password, boolean ssl, String dataBaseScram) {
         this.host = host;
@@ -161,6 +163,7 @@ public class MysqlBinLogConnector {
             // 设置会话checkSum
             this.setCheckSum(this.checkSum);
         }
+        this.rowMetadata = this.fecthBinlogRowMetadata();
         // 设置从服务器连接的uuid
         this.setSlaveUUID();
         // 向dump线程发送注册指令
@@ -190,6 +193,18 @@ public class MysqlBinLogConnector {
         channel.sendCommand(queryCommand);
         TextResultSetPacket textResultSetPacket = channel.readTextResultSetPacket(this.clientCapabilities);
         return BinlogCheckSumEnum.getEnum(textResultSetPacket);
+    }
+
+    /**
+     * 查询当前mysql数据库rowMetaData信息
+     * @return
+     * @throws IOException
+     */
+    private BinlogRowMetadataEnum fecthBinlogRowMetadata() throws IOException {
+        ComQueryCommand queryCommand = new ComQueryCommand(Sql.show_global_variables_like_binlog_row_metadata);
+        channel.sendCommand(queryCommand);
+        TextResultSetPacket textResultSetPacket = channel.readTextResultSetPacket(this.clientCapabilities);
+        return BinlogRowMetadataEnum.getEnum(textResultSetPacket);
     }
 
     /**

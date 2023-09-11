@@ -2,6 +2,8 @@ package com.cl.mysql.binlog.util;
 
 import lombok.experimental.UtilityClass;
 
+import java.util.Collections;
+
 /**
  * @description:
  * @author: liuzijian

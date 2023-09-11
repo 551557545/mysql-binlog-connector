@@ -25,4 +25,6 @@ public interface Sql {
 
     String set_slave_uuid = "set @slave_uuid = UUID()";
 
+    String show_global_variables_like_binlog_row_metadata = "show global variables like 'binlog_row_metadata'";
+
 }
