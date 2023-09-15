@@ -24,15 +24,16 @@ public class Row {
     /**
      * <a href="https://github.com/mysql/mysql-server/blob/8.0/strings/decimal.cc">源码：搜dig2bytes</a>
      */
-    private static int[] dig2bytes = {0, 1, 1, 2, 2, 3, 3, 4, 4, 4};
+    private final static int[] dig2bytes = {0, 1, 1, 2, 2, 3, 3, 4, 4, 4};
 
-    private List<Object> rowValue = new ArrayList<>();
+    private final List<Object> rowValue;
 
 
     public Row(Long tableId, ByteArrayIndexInputStream in) throws IOException {
         TableMapEvent tableMapEvent = TableMapEvent.getTableInfo(tableId);
         List<Integer> metaDataList = tableMapEvent.getMetadata();
         int columnCount = tableMapEvent.getColumnCount();
+        rowValue = new ArrayList<>(columnCount);
         int nullBitMaskLength = (columnCount + 7) / 8;
 
 
