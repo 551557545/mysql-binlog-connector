@@ -1,6 +1,7 @@
 package com.cl.mysql.binlog.binlogEvent;
 
 import com.cl.mysql.binlog.constant.BinlogCheckSumEnum;
+import com.cl.mysql.binlog.constant.BinlogEventEnum;
 import com.cl.mysql.binlog.stream.ByteArrayIndexInputStream;
 
 import java.io.IOException;
@@ -14,9 +15,9 @@ public abstract class AbstractBinlogEvent {
 
     /**
      * @param in
-     * @param bodyLength eventSize 减去 checkSum之后的值
+     * @param bodyLength eventSize 减去 checkSum之后的值，而FormatDescriptionEvent事件会多减去一个1
      */
-    public AbstractBinlogEvent(ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
+    public AbstractBinlogEvent(BinlogEventEnum binlogEvent, ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
 
     }
 

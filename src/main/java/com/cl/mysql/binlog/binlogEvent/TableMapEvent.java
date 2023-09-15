@@ -1,6 +1,7 @@
 package com.cl.mysql.binlog.binlogEvent;
 
 import com.cl.mysql.binlog.constant.BinlogCheckSumEnum;
+import com.cl.mysql.binlog.constant.BinlogEventEnum;
 import com.cl.mysql.binlog.constant.TableMapColumnTypeEnum;
 import com.cl.mysql.binlog.constant.TableMapOptMetadaTypeEnum;
 import com.cl.mysql.binlog.stream.ByteArrayIndexInputStream;
@@ -71,8 +72,8 @@ public class TableMapEvent extends AbstractBinlogEvent {
      * @param in
      * @param bodyLength eventSize 减去 checkSum之后的值
      */
-    public TableMapEvent(ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
-        super(in, bodyLength, checkSum);
+    public TableMapEvent(BinlogEventEnum binlogEvent, ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
+        super(binlogEvent, in, bodyLength, checkSum);
         this.tableId = in.readLong(6);
         this.flags = in.readInt(2);
 

@@ -1,6 +1,7 @@
 package com.cl.mysql.binlog.binlogEvent;
 
 import com.cl.mysql.binlog.constant.BinlogCheckSumEnum;
+import com.cl.mysql.binlog.constant.BinlogEventEnum;
 import com.cl.mysql.binlog.stream.ByteArrayIndexInputStream;
 import lombok.Getter;
 
@@ -72,8 +73,8 @@ public class QueryEvent extends AbstractBinlogEvent {
      * @param in
      * @param bodyLength eventSize 减去 checkSum之后的值
      */
-    public QueryEvent(ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
-        super(in, bodyLength, checkSum);
+    public QueryEvent(BinlogEventEnum binlogEvent, ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
+        super(binlogEvent, in, bodyLength, checkSum);
         this.threadId = in.readInt(4);
         this.queryExecTime = in.readInt(4) * 1000L;
         this.dbLen = in.readInt(1);

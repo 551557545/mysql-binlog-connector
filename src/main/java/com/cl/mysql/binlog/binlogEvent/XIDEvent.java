@@ -1,6 +1,7 @@
 package com.cl.mysql.binlog.binlogEvent;
 
 import com.cl.mysql.binlog.constant.BinlogCheckSumEnum;
+import com.cl.mysql.binlog.constant.BinlogEventEnum;
 import com.cl.mysql.binlog.stream.ByteArrayIndexInputStream;
 import lombok.Getter;
 
@@ -16,8 +17,8 @@ public class XIDEvent extends AbstractBinlogEvent {
 
     private final Integer xid;
 
-    public XIDEvent(ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
-        super(in, bodyLength, checkSum);
+    public XIDEvent(BinlogEventEnum binlogEvent, ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
+        super(binlogEvent, in, bodyLength, checkSum);
         this.xid = in.readInt(8);
     }
 

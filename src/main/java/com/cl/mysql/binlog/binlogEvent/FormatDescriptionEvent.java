@@ -43,8 +43,8 @@ public class FormatDescriptionEvent extends AbstractBinlogEvent {
     private final Integer checkSum;
 
 
-    public FormatDescriptionEvent(ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
-        super(in, bodyLength, checkSum);
+    public FormatDescriptionEvent(BinlogEventEnum binlogEvent, ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
+        super(binlogEvent, in, bodyLength, checkSum);
         /**
          * The layout of Format_description_event data part is as follows:
          * Format_description_event数据部分的布局如下:
@@ -66,7 +66,7 @@ public class FormatDescriptionEvent extends AbstractBinlogEvent {
          * +=====================================+
          */
         this.binlogVersion = in.readInt(2);
-        this.serverVersion = in.readString(50);
+        this.serverVersion = in.readString(50).trim();
         this.createTimestamp = in.readInt(4);
         this.headerLength = in.readInt(1); // Length of the Binlog Event Header of next events. Should always be 19. 固定为19
         /**
@@ -76,19 +76,22 @@ public class FormatDescriptionEvent extends AbstractBinlogEvent {
          * 举例：header_length之后的字节数组是 [0][1][2][3][4][5]...[100] 假设BinlogEventEnum.FORMAT_DESCRIPTION_EVENT = 5
          * 那么字节数组的第五位记录着postHeader的长度就是[4]，那根据io流，如果要读取[4]那就要跳过5 - 1个字节，然后读取一位
          */
-        int skipIndex = BinlogEventEnum.FORMAT_DESCRIPTION_EVENT.ordinal() - 1;
+        int skipIndex = BinlogEventEnum.FORMAT_DESCRIPTION_EVENT.getCode() - 1;
         // 跳过下标
         in.skip(skipIndex);
         // 读取一位
-        this.postHeaderLength = in.readInt(1);
         /**
-         * 公式解释：
-         * this.postHeaderLength 指除checkNum外的报文长度 包含了binlog_version、server_version、create_timestamp、header_length 但是 这四项加起来的长度是 小于 完整的postHeaderLength
-         * 所以为了定位checkSumType的位置，还需要除了减去binlog_version、server_version、create_timestamp、header_length四项的长度，还要减去postHeaderLength包含的其他报文的长度（除了四项）
+         * postHeaderLength 长度 包含了binlogVersion + serverVersion + createTimestamp + headerLength + skipIndex + 1
          */
-        int checkSumSkipLength = this.postHeaderLength - 2 - 50 - 4 - 1 - skipIndex - 1;
-        in.skip(checkSumSkipLength);
-        this.checkSumType = BinlogCheckSumEnum.getByOrdinal(in.read());
+        this.postHeaderLength = in.readInt(1);
+
+        /**
+         * 可以根据这个计算公式 来确定checkSum占用的字节数 FD的checkSum比其他event多一个字节，用来记录类型，
+         */
+        int checkSumLength =  bodyLength + checkSum.getLength() + 1 - postHeaderLength;
+        in.skip(in.available() - checkSumLength);
+        // 读取1字节去获取checkSum类型
+        this.checkSumType = BinlogCheckSumEnum.getByOrdinal(in.readInt(1));
         if (BinlogCheckSumEnum.CRC32 == this.checkSumType) {
             this.checkSum = in.readInt(BinlogCheckSumEnum.CRC32.getLength());
         } else {

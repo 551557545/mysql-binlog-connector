@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.Date;
 
 /**
- * @description:
+ * @description: binlog-version = 4 的event解析
  * @author: liuzijian
  * @time: 2023-09-05 17:36
  */
@@ -79,12 +79,12 @@ public class Event {
              * 文档：https://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_replication_binlog_event.html
              * 说了V4版本的binlog的header长度固定为19 （Length of the Binlog Event Header of next events. Should always be 19.）
              */
-            int commonHdrLength = 19; // （F）
+            int commonHdrLength = 19; // （F） = timeStamp + eventType + serverId + eventSize + logPos + flags
             int checkSumLength = checkSum.getLength();   // FormatDescriptionEvent：（A）+ (V) 其他事件：（V）
             if (eventEnum == BinlogEventEnum.FORMAT_DESCRIPTION_EVENT) {
                 checkSumLength += 1;// 加上（A）位长度
             }
-            body = ReflectUtil.newInstance(eventEnum.getBinlogEventClass(), indexInputStream, eventSize - commonHdrLength - checkSumLength, checkSum);
+            body = ReflectUtil.newInstance(eventEnum.getBinlogEventClass(), eventEnum, indexInputStream, eventSize - commonHdrLength - checkSumLength, checkSum);
         }
         return new Event(header, body);
     }

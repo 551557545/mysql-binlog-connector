@@ -8,6 +8,9 @@ import java.util.Map;
 
 /**
  * @description: <a href="https://dev.mysql.com/doc/dev/mysql-server/latest/classbinary__log_1_1Table__map__event.html#Table_table_map_event_column_types">官方文档</a>，crtl+f搜Table_map_event column types
+ * <p>
+ *     <a href="https://github.com/mysql/mysql-server/blob/8.0/include/field_types.h">mysql8.0源码</a>
+ * </p>
  * @author: liuzijian
  * @time: 2023-09-08 13:44
  */
@@ -64,6 +67,18 @@ public enum TableMapColumnTypeEnum {
      * </p>
      */
     MYSQL_TYPE_BIT(16, 2),
+    /**
+     * metadate有1个字节记录fsp
+     */
+    MYSQL_TYPE_TIMESTAMP2(17, 1),
+    /**
+     * metadate有1个字节记录fsp
+     */
+    MYSQL_TYPE_DATETIME2(18,1),
+    /**
+     * metadate有1个字节记录fsp
+     */
+    MYSQL_TYPE_TIME2(19,1),
     /**
      * A 1 byte unsigned int representing the precision, followed by a 1 byte unsigned int representing the number of decimals.
      * <p>

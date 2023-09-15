@@ -2,8 +2,6 @@ package com.cl.mysql.binlog.util;
 
 import lombok.experimental.UtilityClass;
 
-import java.util.Collections;
-
 /**
  * @description:
  * @author: liuzijian
@@ -40,5 +38,44 @@ public class CommonUtil {
         }
         return result;
     }
+
+    /**
+     * 将小端字节转为大端
+     *
+     * @param bytes  字节数组
+     * @param offset 偏移量
+     * @param length 长度
+     * @return
+     */
+    public static int bigEndianInteger(byte[] bytes, int offset, int length) {
+        int result = 0;
+        for (int i = offset; i < length + offset; i++) {
+            byte b = bytes[i];
+            result = result << 8;
+            // 小于0的要转为无符号
+            result |= (b >= 0 ? b : Byte.toUnsignedInt(b));
+        }
+        return result;
+    }
+
+    /**
+     * 将小端字节转为大端
+     *
+     * @param bytes  字节数组
+     * @param offset 偏移量
+     * @param length 长度
+     * @return
+     */
+    public static long bigEndianLong(byte[] bytes, int offset, int length) {
+        long result = 0;
+        for (int i = offset; i < length + offset; i++) {
+            byte b = bytes[i];
+            result = result << 8;
+            // 小于0的要转为无符号
+            result |= (b >= 0 ? b : Byte.toUnsignedInt(b));
+        }
+        return result;
+    }
+
 
 }
