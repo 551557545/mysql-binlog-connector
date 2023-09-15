@@ -22,15 +22,15 @@ import java.util.BitSet;
 @Getter
 public class UpdateRowsEvent extends AbstractBinlogEvent {
 
-    private Long tableId;
-    private Integer flags;
+    private final Long tableId;
+    private final Integer flags;
     /**
      * Represents the number of columns in the table
      * <p>
      * 表示表中的列数
      * </p>
      */
-    private Integer width;
+    private final Integer width;
     /**
      * Indicates whether each column is used, one bit per column.<br>
      * For this field, the amount of storage required is INT((width + 7) / 8) bytes.
@@ -39,13 +39,13 @@ public class UpdateRowsEvent extends AbstractBinlogEvent {
      * 对于这个字段，所需的存储量是INT((width + 7) / 8)字节。
      * </p>
      */
-    private BitSet columnsBeforeImage;
+    private final BitSet columnsBeforeImage;
 
-    private BitSet columnsAfterImage;
+    private final BitSet columnsAfterImage;
 
-    private Row beforeRow;
+    private final Row beforeRow;
 
-    private Row afterRow;
+    private final Row afterRow;
 
     /**
      * @param in
