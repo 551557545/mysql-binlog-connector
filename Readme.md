@@ -46,6 +46,7 @@
 linux：my.cnf  / windows：my.inf
 
 ```
+[mysql]
 #开启binlog
 log-bin=mysql-bin
 binlog_format=ROW
