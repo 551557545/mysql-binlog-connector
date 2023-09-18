@@ -24,16 +24,16 @@
 
 ## 3、目前有以下的mysql字段类型暂时不支持解析：
 
-|      字段类型      | 支持解析 |                         其他说明                         |
-| :----------------: | :------: | :------------------------------------------------------: |
-|     multipoint     |    ✖     |                                                          |
-|        Json        |    ✔     | 支持解析，目前仅返回原始byte数组，尚未解析承成jsonObject |
-|     linestring     |    ✖     |                                                          |
-|    multipolygon    |    ✖     |                                                          |
-|       point        |    ✖     |                                                          |
-|      polygon       |    ✖     |                                                          |
-|      geometry      |    ✖     |                                                          |
-| geometrycollection |    ✖     |                                                          |
+|      字段类型      | 支持解析 |                        其他说明                        |
+| :----------------: | :------: | :----------------------------------------------------: |
+|     multipoint     |    ✖     |                                                        |
+|        Json        |    ✔     | 支持解析，目前仅返回原始byte数组，尚未解析成jsonObject |
+|     linestring     |    ✖     |                                                        |
+|    multipolygon    |    ✖     |                                                        |
+|       point        |    ✖     |                                                        |
+|      polygon       |    ✖     |                                                        |
+|      geometry      |    ✖     |                                                        |
+| geometrycollection |    ✖     |                                                        |
 
 ## 4、安装方式
 
