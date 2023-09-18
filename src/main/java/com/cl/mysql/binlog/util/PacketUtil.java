@@ -7,15 +7,15 @@ package com.cl.mysql.binlog.util;
  */
 public class PacketUtil {
 
-    public static boolean isOkPacket(byte firstByte){
+    public static boolean isOkPacket(byte firstByte) {
         return (firstByte & 0xff) == 0x0;
     }
 
-    public static boolean isEOFPacket(byte firstByte){
+    public static boolean isEOFPacket(byte firstByte) {
         return (firstByte & 0xff) == 0xfe;
     }
 
-    public static boolean isErrorPacket(byte firstByte){
+    public static boolean isErrorPacket(byte firstByte) {
         return (firstByte & 0xff) == 0xff;
     }
 

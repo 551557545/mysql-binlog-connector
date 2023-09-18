@@ -1,6 +1,5 @@
 package com.cl.mysql.binlog;
 
-import com.cl.mysql.binlog.constant.CommandTypeEnum;
 import com.cl.mysql.binlog.network.MysqlBinLogConnector;
 
 public class Main {

@@ -88,7 +88,7 @@ public class FormatDescriptionEvent extends AbstractBinlogEvent {
         /**
          * 可以根据这个计算公式 来确定checkSum占用的字节数 FD的checkSum比其他event多一个字节，用来记录类型，
          */
-        int checkSumLength =  bodyLength + checkSum.getLength() + 1 - postHeaderLength;
+        int checkSumLength = bodyLength + checkSum.getLength() + 1 - postHeaderLength;
         in.skip(in.available() - checkSumLength);
         // 读取1字节去获取checkSum类型
         this.checkSumType = BinlogCheckSumEnum.getByOrdinal(in.readInt(1));

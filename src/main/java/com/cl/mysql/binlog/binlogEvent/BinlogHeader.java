@@ -7,7 +7,7 @@ import java.util.Date;
 
 /**
  * @description: binlogEventCommonHeader实体 <p>
- *     <a href="https://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_replication_binlog_event.html#sect_protocol_replication_event_format_desc">官方文档，最下面</a>
+ * <a href="https://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_replication_binlog_event.html#sect_protocol_replication_event_format_desc">官方文档，最下面</a>
  * @author: liuzijian
  * @time: 2023-09-05 16:30
  */

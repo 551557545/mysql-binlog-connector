@@ -69,13 +69,13 @@ public abstract class AbstractRowEvent extends AbstractBinlogEvent {
     public abstract void parseColumnImageAndRows(ByteArrayIndexInputStream in) throws IOException;
 
     /**
-     *  +-------------------------------------------------------+
-     *  | Event Type | Cols_before_image | Cols_after_image     |
-     *  +-------------------------------------------------------+
-     *  |  DELETE    |   Deleted row     |    NULL              |
-     *  |  INSERT    |   NULL            |    Inserted row      |
-     *  |  UPDATE    |   Old     row     |    Updated row       |
-     *  +-------------------------------------------------------+
+     * +-------------------------------------------------------+
+     * | Event Type | Cols_before_image | Cols_after_image     |
+     * +-------------------------------------------------------+
+     * |  DELETE    |   Deleted row     |    NULL              |
+     * |  INSERT    |   NULL            |    Inserted row      |
+     * |  UPDATE    |   Old     row     |    Updated row       |
+     * +-------------------------------------------------------+
      */
     @Getter
     @AllArgsConstructor

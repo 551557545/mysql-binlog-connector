@@ -24,7 +24,7 @@ public enum BinlogCheckSumEnum {
 
     private final int length;
 
-    public static BinlogCheckSumEnum getByOrdinal(int ordinal){
+    public static BinlogCheckSumEnum getByOrdinal(int ordinal) {
         return values()[ordinal];
     }
 

@@ -43,8 +43,8 @@ package com.cl.mysql.binlog.entity;
  * type_code is not a part of the class Extra_row_info as it is a constant values used at the time of serializing and decoding the event.
  * </p>
  * <p>
- *     这是存储为extra_row_info的任何信息的格式。<br>
- *     type_code不是Extra_row_info类的一部分，因为它是在序列化和解码事件时使用的常量值。
+ * 这是存储为extra_row_info的任何信息的格式。<br>
+ * type_code不是Extra_row_info类的一部分，因为它是在序列化和解码事件时使用的常量值。
  * </p>
  *
  * @author: liuzijian

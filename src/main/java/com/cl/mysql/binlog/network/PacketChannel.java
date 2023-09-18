@@ -78,7 +78,7 @@ public class PacketChannel {
 
     public byte[] readBinlogStream() throws IOException {
         int length = this.inputStream.readInt(3);
-        if(length == -1){
+        if (length == -1) {
             throw new RuntimeException("mysql服务器已断开连接");
         }
         int sequence = this.inputStream.read();

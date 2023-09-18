@@ -1,7 +1,6 @@
 package com.cl.mysql.binlog.network.protocol.packet;
 
 import com.cl.mysql.binlog.constant.CapabilitiesFlagsEnum;
-import com.cl.mysql.binlog.network.protocol.InitialHandshakeProtocol;
 import com.cl.mysql.binlog.stream.ByteArrayIndexInputStream;
 import lombok.Getter;
 

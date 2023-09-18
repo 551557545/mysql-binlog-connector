@@ -4,7 +4,6 @@ mysql源码剖析–通信协议分析
 
 https://blog.csdn.net/fs3296/article/details/117044104
 
-
 multipoint 未支持
 json 仅返回byte数组
 linestring 未支持

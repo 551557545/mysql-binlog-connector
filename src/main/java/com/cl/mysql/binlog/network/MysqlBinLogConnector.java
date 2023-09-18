@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import com.cl.mysql.binlog.binlogEvent.Event;
 import com.cl.mysql.binlog.constant.*;
 import com.cl.mysql.binlog.entity.BinlogInfo;
+import com.cl.mysql.binlog.listener.EventListener;
 import com.cl.mysql.binlog.network.command.*;
 import com.cl.mysql.binlog.network.protocol.InitialHandshakeProtocol;
 import com.cl.mysql.binlog.network.protocol.packet.TextResultSetPacket;
@@ -16,6 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @description: 连接器
@@ -52,6 +55,8 @@ public class MysqlBinLogConnector {
     private BinlogCheckSumEnum checkSum;
 
     private BinlogRowMetadataEnum rowMetadata;
+
+    private List<EventListener> eventListenerList = new ArrayList<>();
 
     private MysqlBinLogConnector(String host, int port, String userName, String password, boolean ssl, String dataBaseScram) {
         this.host = host;
@@ -175,14 +180,16 @@ public class MysqlBinLogConnector {
             byte[] bytes = channel.readBinlogStream();
             ByteArrayIndexInputStream indexInputStream = this.checkBinlogPacket(bytes);
             Event event = Event.V4Deserialization(indexInputStream, this.checkSum);
-            if (BinlogEventTypeEnum.isUpdateEvent(event.getEventType())) {
-                System.out.println(1);
-            } else if (BinlogEventTypeEnum.isInsertEvent(event.getEventType())) {
-                System.out.println(1);
-            } else if (BinlogEventTypeEnum.isDelteEvent(event.getEventType())) {
-                System.out.println(1);
+            for (EventListener listener : this.eventListenerList) {
+                listener.listenAll(event);
+                if (BinlogEventTypeEnum.isUpdateEvent(event.getEventType())) {
+                    listener.listenUpdateEvent(event);
+                } else if (BinlogEventTypeEnum.isInsertEvent(event.getEventType())) {
+                    listener.listenInsertEvent(event);
+                } else if (BinlogEventTypeEnum.isDelteEvent(event.getEventType())) {
+                    listener.listenDeleteEvent(event);
+                }
             }
-
         }
     }
 
@@ -278,6 +285,10 @@ public class MysqlBinLogConnector {
 
     public void addClientCapabilities(CapabilitiesFlagsEnum e) {
         this.clientCapabilities = CapabilitiesFlagsEnum.add(this.clientCapabilities, e);
+    }
+
+    public void registerEventListener(EventListener eventListener) {
+        eventListenerList.add(eventListener);
     }
 
 

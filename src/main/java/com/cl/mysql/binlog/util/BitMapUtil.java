@@ -1,6 +1,5 @@
 package com.cl.mysql.binlog.util;
 
-import java.util.Arrays;
 import java.util.BitSet;
 
 /**
@@ -95,7 +94,7 @@ public class BitMapUtil {
         return bitSet;
     }
 
-    public static BitSet parseBitMapByBigEndian(byte[] bigEndian){
+    public static BitSet parseBitMapByBigEndian(byte[] bigEndian) {
         BitSet bitSet = new BitSet();
         for (int index = bigEndian.length - 1, trueIndex = 0; index >= 0; index--, trueIndex++) {
             for (int bitIndex = 0; bitIndex < 8; bitIndex++) {

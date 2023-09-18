@@ -13,7 +13,7 @@ import java.nio.charset.Charset;
  */
 public class ByteArrayIndexOutputStream extends OutputStream {
 
-    private byte[] b ;
+    private byte[] b;
 
     private final OutputStream out;
 
