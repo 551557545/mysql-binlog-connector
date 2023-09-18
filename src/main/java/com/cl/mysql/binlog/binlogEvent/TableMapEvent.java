@@ -161,7 +161,7 @@ public class TableMapEvent extends AbstractBinlogEvent {
         private byte[] columnCharset;
 
         /**
-         * 字段名称，只有当binlog_row_metadata=FULL的时候才有值
+         * 字段名称，只有当[mysqld] binlog_row_metadata=FULL的时候才有值
          */
         private List<String> columnName;
 
