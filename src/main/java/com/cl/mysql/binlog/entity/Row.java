@@ -129,7 +129,7 @@ public class Row {
     }
 
     /**
-     * <a href="https://github.com/mysql/mysql-server/blob/8.0/sql/log_event.cc">源码第1813行 ~ 2145行，即log_event_print_value方法，用来读取不同类型的长度</a><br>
+     * 获取长度：<a href="https://github.com/mysql/mysql-server/blob/8.0/sql/log_event.cc">源码第1813行 ~ 2145行，即log_event_print_value方法，用来读取不同类型的长度</a><br>
      *
      * @param in
      * @return
@@ -140,7 +140,7 @@ public class Row {
     }
 
     /**
-     * <a href="https://github.com/mysql/mysql-server/blob/8.0/sql/log_event.cc">源码第1813行 ~ 2145行，即log_event_print_value方法，用来读取不同类型的长度</a><br>
+     * 获取长度：<a href="https://github.com/mysql/mysql-server/blob/8.0/sql/log_event.cc">源码第1813行 ~ 2145行，即log_event_print_value方法，用来读取不同类型的长度</a><br>
      *
      * @param in
      * @return
@@ -151,7 +151,7 @@ public class Row {
     }
 
     /**
-     * <a href="https://github.com/mysql/mysql-server/blob/8.0/sql/log_event.cc">源码第1813行 ~ 2145行，即log_event_print_value方法，用来读取不同类型的长度</a><br>
+     * 获取长度：<a href="https://github.com/mysql/mysql-server/blob/8.0/sql/log_event.cc">源码第1813行 ~ 2145行，即log_event_print_value方法，用来读取不同类型的长度</a><br>
      *
      * @param in
      * @return
@@ -248,8 +248,8 @@ public class Row {
     }
 
     /**
-     * <a href="https://github.com/mysql/mysql-server/blob/8.0/strings/decimal.cc">mysql8.0源码，搜int decimal_bin_size_inline，来计算字节长度</a><br>
-     * <a href="https://github.com/mysql/mysql-server/blob/8.0/storage/ndb/clusterj/clusterj-tie/src/main/java/com/mysql/clusterj/tie/Utility.java">搜unpackTime2来获取真实值</a>
+     * 获取长度：<a href="https://github.com/mysql/mysql-server/blob/8.0/strings/decimal.cc">mysql8.0源码，搜int decimal_bin_size_inline，来计算字节长度</a><br>
+     * 获取值：<a href="https://github.com/mysql/mysql-server/blob/8.0/storage/ndb/clusterj/clusterj-tie/src/main/java/com/mysql/clusterj/tie/Utility.java">搜unpackTime2来获取真实值</a>
      *
      * @param meta
      * @param in
@@ -278,9 +278,9 @@ public class Row {
     }
 
     /**
-     * <a href="https://github.com/mysql/mysql-server/blob/8.0/strings/decimal.cc">mysql8.0源码，搜int decimal_bin_size_inline，来计算字节长度</a><br>
+     * 获取长度：<a href="https://github.com/mysql/mysql-server/blob/8.0/sql/log_event.cc">源码第1813行 ~ 2145行，即log_event_print_value方法，用来读取不同类型的长度</a><br>
      * 格式：yyyy-MM-dd HH:mm:ss<br>
-     * 参考{@link com.google.code.or.common.util.MySQLUtils#toDatetime(long)}<br>
+     * 获取值：参考{@link com.google.code.or.common.util.MySQLUtils#toDatetime(long)}
      * 或者
      * <a href="https://github.com/mysql/mysql-server/blob/8.0/storage/ndb/clusterj/clusterj-tie/src/main/java/com/mysql/clusterj/tie/Utility.java">搜unpackDatetime来获取真实值</a>
      *
@@ -305,6 +305,15 @@ public class Row {
         return c.getTime();
     }
 
+    /**
+     * 获取长度：<a href="https://github.com/mysql/mysql-server/blob/8.0/sql/log_event.cc">源码第1813行 ~ 2145行，即log_event_print_value方法，用来读取不同类型的长度</a><br>
+     * 获取值：<a href="https://github.com/mysql/mysql-server/blob/8.0/storage/ndb/clusterj/clusterj-tie/src/main/java/com/mysql/clusterj/tie/Utility.java">搜unpackDatetime2来获取真实值</a>
+     *
+     * @param meta
+     * @param in
+     * @return
+     * @throws IOException
+     */
     private java.util.Date parseDateTime2(int meta, ByteArrayIndexInputStream in) throws IOException {
         int packedDatetime2BytesLength = 5;// 不包括纳秒的长度
         int millisecondsBytesLength = (meta + 1) / 2;// 纳秒长度
@@ -333,6 +342,14 @@ public class Row {
         return calendar.getTime();
     }
 
+    /**
+     * 获取长度：<a href="https://github.com/mysql/mysql-server/blob/8.0/sql/log_event.cc">源码第1813行 ~ 2145行，即log_event_print_value方法，用来读取不同类型的长度</a><br>
+     * 获取值：剩下的解析参考{@link com.google.code.or.common.util.MySQLUtils#toYear(int)}<br>
+     *
+     * @param in
+     * @return
+     * @throws IOException
+     */
     private Object parseYear(ByteArrayIndexInputStream in) throws IOException {
         int value = in.readInt(1);
         return value + 1900;
@@ -343,6 +360,9 @@ public class Row {
     }
 
     /**
+     * 获取长度：<a href="https://github.com/mysql/mysql-server/blob/8.0/sql/log_event.cc">源码第1813行 ~ 2145行，即log_event_print_value方法，用来读取不同类型的长度</a><br>
+     * 获取值：bitmap实现
+     *
      * @param meta
      * @param in
      * @return
@@ -367,9 +387,9 @@ public class Row {
      */
     private BigDecimal parseNewdecimal(int meta, ByteArrayIndexInputStream in) throws IOException {
         // 长度
-        int precision = meta & 0b11111111;
+        int precision = meta & 0b1111_1111;
         // 小数点
-        int scale = (meta >> 8) & 0b11111111;
+        int scale = (meta >> 8) & 0b1111_1111;
         final int DIG_PER_DEC1 = 9;
         int intg = precision - scale;
         int intg0 = intg / DIG_PER_DEC1;
@@ -410,7 +430,7 @@ public class Row {
     }
 
     /**
-     * <a href="https://github.com/mysql/mysql-server/blob/8.0/strings/decimal.cc">mysql8.0源码，搜int decimal_bin_size_inline里的case MYSQL_TYPE_BLOB，来计算字节长度</a>
+     * 获取长度：<a href="https://github.com/mysql/mysql-server/blob/8.0/sql/log_event.cc">源码第1813行 ~ 2145行，即log_event_print_value方法，用来读取不同类型的长度</a><br>
      *
      * @param meta
      * @param in
@@ -423,11 +443,11 @@ public class Row {
     }
 
     /**
-     * 返回enum下标，从1开始
+     * 获取长度：<a href="https://github.com/mysql/mysql-server/blob/8.0/sql/log_event.cc">源码第1813行 ~ 2145行，即log_event_print_value方法，用来读取不同类型的长度</a><br>
      *
      * @param meta
      * @param in
-     * @return
+     * @return 返回enum下标，从1开始
      * @throws IOException
      */
     private Object parseEnum(int meta, ByteArrayIndexInputStream in) throws IOException {
@@ -435,11 +455,11 @@ public class Row {
     }
 
     /**
-     * 返回set下标，从1开始
+     * 获取长度：<a href="https://github.com/mysql/mysql-server/blob/8.0/sql/log_event.cc">源码第1813行 ~ 2145行，即log_event_print_value方法，用来读取不同类型的长度</a><br>
      *
      * @param meta
      * @param in
-     * @return
+     * @return 返回bitset
      * @throws IOException
      */
     private BitSet parseSet(int meta, ByteArrayIndexInputStream in) throws IOException {
