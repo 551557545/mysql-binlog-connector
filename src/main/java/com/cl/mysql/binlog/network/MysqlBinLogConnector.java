@@ -19,6 +19,8 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * @description: 连接器
@@ -291,5 +293,11 @@ public class MysqlBinLogConnector {
         eventListenerList.add(eventListener);
     }
 
+    public TextResultSetPacket getTableColumns(String dbName, String tableName) throws IOException {
+        ComQueryCommand command = new ComQueryCommand(StrUtil.indexedFormat(Sql.show_columns_from_db_table, dbName, tableName));
+        channel.sendCommand(command);
+        TextResultSetPacket textResultSetPacket = channel.readTextResultSetPacket(this.clientCapabilities);
+        return textResultSetPacket;
+    }
 
 }

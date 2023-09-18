@@ -90,7 +90,11 @@ public class ByteArrayIndexInputStream extends InputStream {
     }
 
     public String readLenencString() throws IOException {
-        int length = this.readLenencInteger().intValue();
+        Number number = this.readLenencInteger();
+        if(number == null){
+            return null;
+        }
+        int length = number.intValue();
         if (length == 0) {
             return "";
         }

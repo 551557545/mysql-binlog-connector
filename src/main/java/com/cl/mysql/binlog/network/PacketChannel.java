@@ -95,7 +95,9 @@ public class PacketChannel {
      * <li>最后的结束包，同样可能是EOF或OK包</li>
      */
     public TextResultSetPacket readTextResultSetPacket(int clientCapabilities) throws IOException {
-        ByteArrayIndexInputStream in = new ByteArrayIndexInputStream(this.readDataContent());
+        byte[] readDataContent = this.readDataContent();
+        checkPacket(readDataContent, clientCapabilities);
+        ByteArrayIndexInputStream in = new ByteArrayIndexInputStream(readDataContent);
         int metadataFollows = -1;
         if (CapabilitiesFlagsEnum.has(clientCapabilities, CapabilitiesFlagsEnum.CLIENT_OPTIONAL_RESULTSET_METADATA)) {
             metadataFollows = in.readInt(1);

@@ -27,4 +27,9 @@ public interface Sql {
 
     String show_global_variables_like_binlog_row_metadata = "show global variables like 'binlog_row_metadata'";
 
+    /**
+     * 0：为数据库名称
+     * 1: 为表名
+     */
+    String show_columns_from_db_table = "show columns from {0}.{1}";
 }
