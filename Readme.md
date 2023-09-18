@@ -10,7 +10,11 @@
 
 # 项目介绍
 
-## 1、参考文献
+## 1、运行环境
+
+目前基于mysql8.0.34开发，5.x应该也能使用
+
+## 2、参考文献
 
 - mysql源码 https://github.com/mysql/mysql-server/blob/8.0
 - mysql8.0文档 https://dev.mysql.com/doc/dev/mysql-server/latest/
@@ -18,7 +22,7 @@
 - open-replicator
 - mysql源码剖析–通信协议分析 https://blog.csdn.net/fs3296/article/details/117044104
 
-## 2、目前有以下的mysql字段类型暂时不支持解析：
+## 3、目前有以下的mysql字段类型暂时不支持解析：
 
 |      字段类型      | 支持解析 |                         其他说明                         |
 | :----------------: | :------: | :------------------------------------------------------: |
@@ -31,11 +35,11 @@
 |      geometry      |    ✖     |                                                          |
 | geometrycollection |    ✖     |                                                          |
 
-## 3、安装方式
+## 4、安装方式
 
 目前没有上传到maven中央仓库，请下载源码执行maven打包为jar，并在pom.xml引入
 
-## 4、使用方式
+## 5、使用方式
 
 **注意：若使用非root用户进行连接，请确保非root用户拥有slave监听的权限**
 
