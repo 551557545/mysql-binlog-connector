@@ -39,7 +39,21 @@
 
 目前没有上传到maven中央仓库，请下载源码执行maven打包为jar，并在pom.xml引入
 
-## 5、使用方式
+## 5、使用前准备
+
+在mysql配置添加如下指令：
+
+linux：my.cnf  / windows：my.inf
+
+```
+#开启binlog
+log-bin=mysql-bin
+binlog_format=ROW
+```
+
+
+
+## 6、使用方式
 
 **注意：若使用非root用户进行连接，请确保非root用户拥有slave监听的权限**
 
