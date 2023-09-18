@@ -355,6 +355,14 @@ public class Row {
         return value + 1900;
     }
 
+    /**
+     * 取长度：<a href="https://github.com/mysql/mysql-server/blob/8.0/sql/log_event.cc">源码第1813行 ~ 2145行，即log_event_print_value方法，用来读取不同类型的长度</a><br>
+     * 获取值：直接拿对应长度的字符串即可
+     * @param meta
+     * @param in
+     * @return
+     * @throws IOException
+     */
     private String parseStr(int meta, ByteArrayIndexInputStream in) throws IOException {
         return meta < 256 ? in.readString(in.readInt(1)) : in.readString(in.readInt(2));
     }
