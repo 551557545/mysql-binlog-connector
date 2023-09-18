@@ -32,7 +32,7 @@ public interface PostHeaderLength {
 
     /**
      * 15值取决于：<br>
-     * @see com.cl.mysql.binlog.constant.BinlogEventEnum.FORMAT_DESCRIPTION_EVENT.code
+     * @see BinlogEventTypeEnum.FORMAT_DESCRIPTION_EVENT.code
      */
     int FORMAT_DESCRIPTION_HEADER_LEN = START_V3_HEADER_LEN + 1 + (15 - 1);
 

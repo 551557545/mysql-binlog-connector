@@ -1,6 +1,6 @@
 package com.cl.mysql.binlog.binlogEvent;
 
-import com.cl.mysql.binlog.constant.BinlogEventEnum;
+import com.cl.mysql.binlog.constant.BinlogEventTypeEnum;
 import lombok.Data;
 
 import java.util.Date;
@@ -21,7 +21,7 @@ public class BinlogHeader {
      * <p>
      * binlog的事件类型
      */
-    private BinlogEventEnum event;
+    private BinlogEventTypeEnum event;
 
     private int serverId;
 

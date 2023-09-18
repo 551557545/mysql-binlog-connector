@@ -6,7 +6,6 @@ import com.cl.mysql.binlog.entity.Row;
 import com.cl.mysql.binlog.stream.ByteArrayIndexInputStream;
 import com.cl.mysql.binlog.util.BitMapUtil;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,41 +16,29 @@ import java.util.List;
  * <a href="https://dev.mysql.com/doc/dev/mysql-server/latest/classbinary__log_1_1Update__rows__event.html">官方文档update_row_event</a>
  * 父类：<a href="https://dev.mysql.com/doc/dev/mysql-server/latest/classbinary__log_1_1Rows__event.html">row_event</a>
  *
- * @description: 更新时间
+ * @description: 删除事件
  * @author: liuzijian
- * @time: 2023-09-11 16:34
+ * @time: 2023-09-15 15:48
  */
-@Slf4j
 @Getter
-public class UpdateRowsEvent extends AbstractRowEvent {
+public class DeleteRowsEvent extends AbstractRowEvent {
 
-    /**
-     * Indicates whether each column is used, one bit per column.<br>
-     * For this field, the amount of storage required is INT((width + 7) / 8) bytes.
-     * <p>
-     * 是否每列使用，每列1位。<br>
-     * 对于这个字段，所需的存储量是INT((width + 7) / 8)字节。
-     * </p>
-     */
     private BitSet columnsBeforeImage;
-
-    private BitSet columnsAfterImage;
-
-    List<RowEntry> rows;
+    private List<RowEntry> rows;
 
     /**
+     * @param binlogEvent
      * @param in
-     * @param bodyLength eventSize 减去 checkSum之后的值
+     * @param bodyLength  eventSize 减去 checkSum之后的值，而FormatDescriptionEvent事件会多减去一个1
      * @param checkSum
      */
-    public UpdateRowsEvent(BinlogEventTypeEnum binlogEvent, ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
+    public DeleteRowsEvent(BinlogEventTypeEnum binlogEvent, ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
         super(binlogEvent, in, bodyLength, checkSum);
     }
 
     @Override
     public void parseColumnImageAndRows(ByteArrayIndexInputStream in) throws IOException {
         // 根据源码 https://github.com/mysql/mysql-server/blob/8.0/libbinlogevents/src/rows_event.cpp 第469到473行得知，updateRowsEvent才有两个columnsImage
-        this.columnsBeforeImage = BitMapUtil.convertByBigEndianArray(width, 0, in.readBytes((this.width + 7) / 8));
         /**
          *  +-------------------------------------------------------+
          *  | Event Type | Cols_before_image | Cols_after_image     |
@@ -61,15 +48,14 @@ public class UpdateRowsEvent extends AbstractRowEvent {
          *  |  UPDATE    |   Old     row     |    Updated row       |
          *  +-------------------------------------------------------+
          */
-        this.columnsAfterImage = BitMapUtil.convertByBigEndianArray(this.width, 0, in.readBytes((this.width + 7) / 8));
+        this.columnsBeforeImage = BitMapUtil.convertByBigEndianArray(width, 0, in.readBytes((width + 7) / 8));
 
         rows = new ArrayList<>();
         while (in.available() > 0) {
-            Row before = new Row(this.tableId, in);
-            Row after = new Row(this.tableId, in);
-            rows.add(new RowEntry(before, after));
+            rows.add(new RowEntry(
+                    new Row(this.tableId, in),
+                    null
+            ));
         }
     }
-
-
 }

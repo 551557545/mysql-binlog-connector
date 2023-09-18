@@ -2,10 +2,7 @@ package com.cl.mysql.binlog.network;
 
 import cn.hutool.core.util.StrUtil;
 import com.cl.mysql.binlog.binlogEvent.Event;
-import com.cl.mysql.binlog.constant.BinlogCheckSumEnum;
-import com.cl.mysql.binlog.constant.BinlogRowMetadataEnum;
-import com.cl.mysql.binlog.constant.CapabilitiesFlagsEnum;
-import com.cl.mysql.binlog.constant.Sql;
+import com.cl.mysql.binlog.constant.*;
 import com.cl.mysql.binlog.entity.BinlogInfo;
 import com.cl.mysql.binlog.network.command.*;
 import com.cl.mysql.binlog.network.protocol.InitialHandshakeProtocol;
@@ -178,7 +175,14 @@ public class MysqlBinLogConnector {
             byte[] bytes = channel.readBinlogStream();
             ByteArrayIndexInputStream indexInputStream = this.checkBinlogPacket(bytes);
             Event event = Event.V4Deserialization(indexInputStream, this.checkSum);
-            System.out.println(1);
+            if (BinlogEventTypeEnum.isUpdateEvent(event.getEventType())) {
+                System.out.println(1);
+            } else if (BinlogEventTypeEnum.isInsertEvent(event.getEventType())) {
+                System.out.println(1);
+            } else if (BinlogEventTypeEnum.isDelteEvent(event.getEventType())) {
+                System.out.println(1);
+            }
+
         }
     }
 
@@ -197,6 +201,7 @@ public class MysqlBinLogConnector {
 
     /**
      * 查询当前mysql数据库rowMetaData信息
+     *
      * @return
      * @throws IOException
      */
@@ -227,11 +232,11 @@ public class MysqlBinLogConnector {
      * @throws IOException
      */
     private void setCheckSum(BinlogCheckSumEnum checkSum) throws IOException {
-        log.info("【设置check sum】start");
+        log.debug("【设置check sum】start");
         ComQueryCommand queryCommand = new ComQueryCommand(Sql.set_master_binlog_checksum_global_binlog_checksum);
         channel.sendCommand(queryCommand);
         this.checkPacket(channel.readDataContent());
-        log.info("【设置check sum】end");
+        log.debug("【设置check sum】end");
     }
 
     /**
@@ -242,11 +247,11 @@ public class MysqlBinLogConnector {
      * @throws IOException
      */
     private void setSlaveUUID() throws IOException {
-        log.info("【设置slave uuid】start");
+        log.debug("【设置slave uuid】start");
         ComQueryCommand queryCommand = new ComQueryCommand(Sql.set_slave_uuid);
         channel.sendCommand(queryCommand);
         this.checkPacket(channel.readDataContent());
-        log.info("【设置slave uuid】end");
+        log.debug("【设置slave uuid】end");
     }
 
 

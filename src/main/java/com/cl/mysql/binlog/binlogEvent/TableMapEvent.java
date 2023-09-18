@@ -1,11 +1,12 @@
 package com.cl.mysql.binlog.binlogEvent;
 
 import com.cl.mysql.binlog.constant.BinlogCheckSumEnum;
-import com.cl.mysql.binlog.constant.BinlogEventEnum;
+import com.cl.mysql.binlog.constant.BinlogEventTypeEnum;
 import com.cl.mysql.binlog.constant.TableMapColumnTypeEnum;
 import com.cl.mysql.binlog.constant.TableMapOptMetadaTypeEnum;
 import com.cl.mysql.binlog.stream.ByteArrayIndexInputStream;
 import com.cl.mysql.binlog.util.BitMapUtil;
+import com.cl.mysql.binlog.util.CommonUtil;
 import lombok.Getter;
 
 import java.io.IOException;
@@ -72,7 +73,7 @@ public class TableMapEvent extends AbstractBinlogEvent {
      * @param in
      * @param bodyLength eventSize 减去 checkSum之后的值
      */
-    public TableMapEvent(BinlogEventEnum binlogEvent, ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
+    public TableMapEvent(BinlogEventTypeEnum binlogEvent, ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
         super(binlogEvent, in, bodyLength, checkSum);
         this.tableId = in.readLong(6);
         this.flags = in.readInt(2);
@@ -93,12 +94,30 @@ public class TableMapEvent extends AbstractBinlogEvent {
 
         this.metadataLength = in.readLenencInteger().intValue();
         this.metadata = new ArrayList<>(this.columnCount);
+        /**
+         * 关于sizeOfMetadataInBytes的长度请查看<a href="https://github.com/mysql/mysql-server/blob/8.0/sql/rpl_utility.h">第864行 ~ 第926行</a>
+         */
         for (int i = 0; i < this.columnCount; i++) {
             TableMapColumnTypeEnum columnTypeEnum = columnType.get(i);
-            if (columnTypeEnum.getSizeOfMetadataInBytes() != 0 && columnTypeEnum.getSizeOfMetadataInBytes() != -1) {
-                metadata.add(in.readInt(columnTypeEnum.getSizeOfMetadataInBytes()));
-            } else {
-                metadata.add(0);
+            switch (columnTypeEnum) {
+                case MYSQL_TYPE_FLOAT:
+                case MYSQL_TYPE_DOUBLE:
+                case MYSQL_TYPE_BLOB:
+                case MYSQL_TYPE_JSON:
+                case MYSQL_TYPE_GEOMETRY:
+                case MYSQL_TYPE_BIT:
+                case MYSQL_TYPE_VARCHAR:
+                case MYSQL_TYPE_NEWDECIMAL:
+                case MYSQL_TYPE_TIME2:
+                case MYSQL_TYPE_DATETIME2:
+                case MYSQL_TYPE_TIMESTAMP2:
+                    metadata.add(in.readInt(columnTypeEnum.getSizeOfMetadataInBytes()));
+                    break;
+                case MYSQL_TYPE_STRING:
+                    metadata.add(CommonUtil.bigEndianInteger(in.readBytes(columnTypeEnum.getSizeOfMetadataInBytes()), 0, columnTypeEnum.getSizeOfMetadataInBytes()));
+                    break;
+                default:
+                    metadata.add(0);
             }
         }
         this.nullBits = BitMapUtil.convertByBigEndianArray(this.columnCount, 0, in.readBytes((this.columnCount + 7) / 8));

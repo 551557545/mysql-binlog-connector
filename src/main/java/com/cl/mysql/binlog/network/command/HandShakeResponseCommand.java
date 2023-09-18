@@ -171,7 +171,7 @@ public class HandShakeResponseCommand implements Command {
         } else if ((bytes[0] & 0xff) == 0x0) {
             // 说明登录成功
             OkPacket okPacket = new OkPacket(Arrays.copyOfRange(bytes, 1, bytes.length), this.clientCapabilities);
-            log.info("【操作成功】ok_packet：{}", okPacket);
+            log.debug("【操作成功】ok_packet：{}", okPacket);
         } else if ((bytes[0] & 0xff) == 0xfe) {
             // 说明当前客户端使用的密码插件与用户密码存储在mysql里面的密码插件不一致，要做切换
             this.doSwitchAuthPlugin(bytes);

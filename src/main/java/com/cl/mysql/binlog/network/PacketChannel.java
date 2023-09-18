@@ -145,7 +145,7 @@ public class PacketChannel {
             );
         } else if (PacketUtil.isOkPacket(bytes[0])) {
             OkPacket okPacket = new OkPacket(Arrays.copyOfRange(bytes, 1, bytes.length), clientCapabilities);
-            log.info("【操作成功】ok_packet：{}", okPacket);
+            log.debug("【操作成功】ok_packet：{}", okPacket);
         } else if (PacketUtil.isEOFPacket(bytes[0])) {// 文档上说等于0xfe为eof包 默认意思是无符号的意思，要用0xff相与
             EOFPacket eofPacket = new EOFPacket(Arrays.copyOfRange(bytes, 1, bytes.length));
             log.warn("警告：{}", eofPacket);

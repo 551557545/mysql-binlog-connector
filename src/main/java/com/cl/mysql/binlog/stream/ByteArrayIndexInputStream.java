@@ -62,7 +62,7 @@ public class ByteArrayIndexInputStream extends InputStream {
 
     public byte[] readBytes() throws IOException {
         byte[] buffer = new byte[512 * 1024];
-        in.read(buffer,0,buffer.length);
+        in.read(buffer, 0, buffer.length);
         return buffer;
     }
 
@@ -163,6 +163,9 @@ public class ByteArrayIndexInputStream extends InputStream {
      * @描述 读取定长数组
      */
     public byte[] readBytes(int length) throws IOException {
+        if (length == 0) {
+            return new byte[0];
+        }
         byte[] b = new byte[length];
         this.fillBytes(b, 0, length);
         return b;

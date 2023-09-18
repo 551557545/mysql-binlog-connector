@@ -2,9 +2,11 @@ package com.cl.mysql.binlog.binlogEvent;
 
 import cn.hutool.core.util.ReflectUtil;
 import com.cl.mysql.binlog.constant.BinlogCheckSumEnum;
-import com.cl.mysql.binlog.constant.BinlogEventEnum;
+import com.cl.mysql.binlog.constant.BinlogEventTypeEnum;
 import com.cl.mysql.binlog.stream.ByteArrayIndexInputStream;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.IOException;
 import java.util.Date;
@@ -20,6 +22,9 @@ public class Event {
     private final BinlogHeader header;
 
     private final AbstractBinlogEvent body;
+
+    @Setter(value = AccessLevel.PRIVATE)
+    private BinlogEventTypeEnum eventType;
 
     public Event(BinlogHeader header, AbstractBinlogEvent body) {
         this.header = header;
@@ -39,7 +44,7 @@ public class Event {
         int logPos = indexInputStream.readInt(4); // position of the next event
         int flags = indexInputStream.readInt(2); // See Binlog Event Header Flags
 
-        BinlogEventEnum eventEnum = BinlogEventEnum.getByCode(eventType);
+        BinlogEventTypeEnum eventEnum = BinlogEventTypeEnum.getByCode(eventType);
 
         BinlogHeader header = new BinlogHeader();
         header.setTimeStamp(new Date(timeStamp * 1000L));
@@ -81,12 +86,14 @@ public class Event {
              */
             int commonHdrLength = 19; // （F） = timeStamp + eventType + serverId + eventSize + logPos + flags
             int checkSumLength = checkSum.getLength();   // FormatDescriptionEvent：（A）+ (V) 其他事件：（V）
-            if (eventEnum == BinlogEventEnum.FORMAT_DESCRIPTION_EVENT) {
+            if (eventEnum == BinlogEventTypeEnum.FORMAT_DESCRIPTION_EVENT) {
                 checkSumLength += 1;// 加上（A）位长度
             }
             body = ReflectUtil.newInstance(eventEnum.getBinlogEventClass(), eventEnum, indexInputStream, eventSize - commonHdrLength - checkSumLength, checkSum);
         }
-        return new Event(header, body);
+        Event result = new Event(header, body);
+        result.setEventType(eventEnum);
+        return result;
     }
 
 }

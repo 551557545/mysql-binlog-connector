@@ -1,7 +1,7 @@
 package com.cl.mysql.binlog.binlogEvent;
 
 import com.cl.mysql.binlog.constant.BinlogCheckSumEnum;
-import com.cl.mysql.binlog.constant.BinlogEventEnum;
+import com.cl.mysql.binlog.constant.BinlogEventTypeEnum;
 import com.cl.mysql.binlog.stream.ByteArrayIndexInputStream;
 import lombok.Getter;
 
@@ -43,7 +43,7 @@ public class FormatDescriptionEvent extends AbstractBinlogEvent {
     private final Integer checkSum;
 
 
-    public FormatDescriptionEvent(BinlogEventEnum binlogEvent, ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
+    public FormatDescriptionEvent(BinlogEventTypeEnum binlogEvent, ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
         super(binlogEvent, in, bodyLength, checkSum);
         /**
          * The layout of Format_description_event data part is as follows:
@@ -76,7 +76,7 @@ public class FormatDescriptionEvent extends AbstractBinlogEvent {
          * 举例：header_length之后的字节数组是 [0][1][2][3][4][5]...[100] 假设BinlogEventEnum.FORMAT_DESCRIPTION_EVENT = 5
          * 那么字节数组的第五位记录着postHeader的长度就是[4]，那根据io流，如果要读取[4]那就要跳过5 - 1个字节，然后读取一位
          */
-        int skipIndex = BinlogEventEnum.FORMAT_DESCRIPTION_EVENT.getCode() - 1;
+        int skipIndex = BinlogEventTypeEnum.FORMAT_DESCRIPTION_EVENT.getCode() - 1;
         // 跳过下标
         in.skip(skipIndex);
         // 读取一位

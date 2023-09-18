@@ -11,14 +11,14 @@ import java.util.Map;
  * @description: <a href="https://dev.mysql.com/doc/dev/mysql-server/latest/binlog__event_8h.html">官方文档</a> ctrl+f搜：
  * Enumerations
  * <p>
- *     <a href="https://github.com/mysql/mysql-server/blob/8.0/libbinlogevents/src/control_events.cpp">mysql8.0源码，第95 ~ 第117行</a>
+ * <a href="https://github.com/mysql/mysql-server/blob/8.0/libbinlogevents/src/control_events.cpp">mysql8.0源码，第95 ~ 第117行</a>
  * </p>
  * @author: liuzijian
  * @time: 2023-09-05 16:34
  */
 @AllArgsConstructor
 @Getter
-public enum BinlogEventEnum {
+public enum BinlogEventTypeEnum {
 
     UNKNOWN_EVENT(0, null, -1),
     START_EVENT_V3(1, null, PostHeaderLength.START_V3_HEADER_LEN),
@@ -49,9 +49,9 @@ public enum BinlogEventEnum {
     HEARTBEAT_LOG_EVENT(27, null, PostHeaderLength.HEARTBEAT_HEADER_LEN),
     IGNORABLE_LOG_EVENT(28, null, PostHeaderLength.IGNORABLE_HEADER_LEN),
     ROWS_QUERY_LOG_EVENT(29, null, PostHeaderLength.IGNORABLE_HEADER_LEN),
-    WRITE_ROWS_EVENT_V2(30, null, PostHeaderLength.ROWS_HEADER_LEN_V2),
+    WRITE_ROWS_EVENT_V2(30, WriteRowsEvent.class, PostHeaderLength.ROWS_HEADER_LEN_V2),
     UPDATE_ROWS_EVENT_V2(31, UpdateRowsEvent.class, PostHeaderLength.ROWS_HEADER_LEN_V2),
-    DELETE_ROWS_EVENT_V2(32, null, PostHeaderLength.ROWS_HEADER_LEN_V2),
+    DELETE_ROWS_EVENT_V2(32, DeleteRowsEvent.class, PostHeaderLength.ROWS_HEADER_LEN_V2),
     GTID_LOG_EVENT(33, null, PostHeaderLength.POST_HEADER_LENGTH),
     ANONYMOUS_GTID_LOG_EVENT(34, null, PostHeaderLength.POST_HEADER_LENGTH),
     PREVIOUS_GTIDS_LOG_EVENT(35, null, PostHeaderLength.IGNORABLE_HEADER_LEN),
@@ -68,17 +68,48 @@ public enum BinlogEventEnum {
     private final Class<? extends AbstractBinlogEvent> binlogEventClass;
     private final int postHeaderLength;
 
-    private final static Map<Integer, BinlogEventEnum> cache;
+    private final static Map<Integer, BinlogEventTypeEnum> cache;
 
     static {
-        cache = new HashMap<>(BinlogEventEnum.values().length);
-        for (BinlogEventEnum e : values()) {
+        cache = new HashMap<>(BinlogEventTypeEnum.values().length);
+        for (BinlogEventTypeEnum e : values()) {
             cache.put(e.getCode(), e);
         }
     }
 
-    public static BinlogEventEnum getByCode(int code) {
+    public static BinlogEventTypeEnum getByCode(int code) {
         return cache.getOrDefault(code, UNKNOWN_EVENT);
+    }
+
+    public static boolean isInsertEvent(BinlogEventTypeEnum eventType) {
+        switch (eventType) {
+            case WRITE_ROWS_EVENT_V1:
+            case WRITE_ROWS_EVENT_V2:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public static boolean isUpdateEvent(BinlogEventTypeEnum eventType) {
+        switch (eventType) {
+            case UPDATE_ROWS_EVENT_V1:
+            case UPDATE_ROWS_EVENT_V2:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public static boolean isDelteEvent(BinlogEventTypeEnum eventType) {
+        switch (eventType) {
+            case DELETE_FILE_EVENT:
+            case DELETE_ROWS_EVENT_V1:
+            case DELETE_ROWS_EVENT_V2:
+                return true;
+            default:
+                return false;
+        }
     }
 
 }

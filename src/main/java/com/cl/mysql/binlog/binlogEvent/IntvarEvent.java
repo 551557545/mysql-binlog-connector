@@ -1,7 +1,7 @@
 package com.cl.mysql.binlog.binlogEvent;
 
 import com.cl.mysql.binlog.constant.BinlogCheckSumEnum;
-import com.cl.mysql.binlog.constant.BinlogEventEnum;
+import com.cl.mysql.binlog.constant.BinlogEventTypeEnum;
 import com.cl.mysql.binlog.stream.ByteArrayIndexInputStream;
 import lombok.Getter;
 
@@ -25,7 +25,7 @@ public class IntvarEvent extends AbstractBinlogEvent {
      */
     private final Integer val;
 
-    public IntvarEvent(BinlogEventEnum binlogEvent, ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
+    public IntvarEvent(BinlogEventTypeEnum binlogEvent, ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
         super(binlogEvent, in, bodyLength, checkSum);
         this.type = in.readInt(1);
         this.val = in.readInt(8);

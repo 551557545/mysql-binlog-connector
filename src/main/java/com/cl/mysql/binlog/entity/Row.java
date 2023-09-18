@@ -1,10 +1,12 @@
 package com.cl.mysql.binlog.entity;
 
 import com.cl.mysql.binlog.binlogEvent.TableMapEvent;
+import com.cl.mysql.binlog.constant.JsonTypeEnum;
 import com.cl.mysql.binlog.constant.TableMapColumnTypeEnum;
 import com.cl.mysql.binlog.stream.ByteArrayIndexInputStream;
 import com.cl.mysql.binlog.util.BitMapUtil;
 import com.cl.mysql.binlog.util.CommonUtil;
+import lombok.Getter;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -20,6 +22,7 @@ import java.util.List;
  * @author: liuzijian
  * @time: 2023-09-15 15:42
  */
+@Getter
 public class Row {
     /**
      * <a href="https://github.com/mysql/mysql-server/blob/8.0/strings/decimal.cc">源码：搜dig2bytes</a>
@@ -35,20 +38,35 @@ public class Row {
         int columnCount = tableMapEvent.getColumnCount();
         rowValue = new ArrayList<>(columnCount);
         int nullBitMaskLength = (columnCount + 7) / 8;
-
-
         BitSet nullBitMask = BitMapUtil.convertByBigEndianArray(columnCount, 0, in.readBytes(nullBitMaskLength));
         for (int i = 0; i < columnCount; i++) {
             if (!nullBitMask.get(i)) {
                 int meta = metaDataList.get(i);
-                Object value = deserializeField(tableMapEvent.getColumnType().get(i), in, meta);
+                TableMapColumnTypeEnum columnTypeEnum = tableMapEvent.getColumnType().get(i);
+                /**
+                 * 下面逻辑参考<a href="https://github.com/mysql/mysql-server/blob/8.0/sql/log_event.cc">源码，搜1819行~1832行</a>
+                 */
+                if (columnTypeEnum == TableMapColumnTypeEnum.MYSQL_TYPE_STRING) {
+                    if (meta >= 256) {
+                        int sourceMetaType = meta >> 8;// https://github.com/mysql/mysql-server/blob/8.0/sql/rpl_utility.h 第327行 ~ 第334行 解释meta怎么获取真实的类型
+                        int byte1 = meta & 0xFF;
+                        if ((sourceMetaType & 0x30) != 0x30) {
+                            /* a long CHAR() field: see #37426 */
+                            meta = byte1 | (((sourceMetaType & 0x30) ^ 0x30) << 4);
+                        } else {
+                            meta = meta & 0xFF;
+                        }
+                        columnTypeEnum = TableMapColumnTypeEnum.getByIdentifier(sourceMetaType | 0x30);
+                    }
+                }
+                Object value = this.deserializeField(columnTypeEnum, in, meta);
                 rowValue.add(value);
             }
         }
     }
 
     /**
-     * <a href="https://github.com/mysql/mysql-server/blob/8.0/sql/log_event.cc">源码第1813行 ~ 2145行，用来读取不同类型的长度</a><br>
+     * <a href="https://github.com/mysql/mysql-server/blob/8.0/sql/log_event.cc">源码第1813行 ~ 2145行，即log_event_print_value方法，用来读取不同类型的长度</a><br>
      * <a href="https://github.com/mysql/mysql-server/blob/8.0/storage/ndb/clusterj/clusterj-tie/src/main/java/com/mysql/clusterj/tie/Utility.java">参考源码，去解析各种类型的实际值</a>
      *
      * @param columnType 字段类型
@@ -95,17 +113,23 @@ public class Row {
             case MYSQL_TYPE_STRING:
                 return this.parseStr(meta, in);
             case MYSQL_TYPE_BIT:
+                return this.parseBit(meta, in);
+            case MYSQL_TYPE_JSON:
+                return this.parseJson(meta, in);
             case MYSQL_TYPE_NEWDECIMAL:
                 return this.parseNewdecimal(meta, in);
             case MYSQL_TYPE_BLOB:
                 return this.parseBlob(meta, in);
+            case MYSQL_TYPE_ENUM:
+                return this.parseEnum(meta, in);
+            case MYSQL_TYPE_SET:
+                return this.parseSet(meta, in);
         }
         return null;
     }
 
-
     /**
-     * <a href="https://github.com/mysql/mysql-server/blob/8.0/strings/decimal.cc">mysql8.0源码，搜int decimal_bin_size_inline，来计算字节长度</a>
+     * <a href="https://github.com/mysql/mysql-server/blob/8.0/sql/log_event.cc">源码第1813行 ~ 2145行，即log_event_print_value方法，用来读取不同类型的长度</a><br>
      *
      * @param in
      * @return
@@ -116,7 +140,7 @@ public class Row {
     }
 
     /**
-     * <a href="https://github.com/mysql/mysql-server/blob/8.0/strings/decimal.cc">mysql8.0源码，搜int decimal_bin_size_inline，来计算字节长度</a>
+     * <a href="https://github.com/mysql/mysql-server/blob/8.0/sql/log_event.cc">源码第1813行 ~ 2145行，即log_event_print_value方法，用来读取不同类型的长度</a><br>
      *
      * @param in
      * @return
@@ -127,18 +151,20 @@ public class Row {
     }
 
     /**
-     * <a href="https://github.com/mysql/mysql-server/blob/8.0/strings/decimal.cc">mysql8.0源码，搜int decimal_bin_size_inline，来计算字节长度</a>
+     * <a href="https://github.com/mysql/mysql-server/blob/8.0/sql/log_event.cc">源码第1813行 ~ 2145行，即log_event_print_value方法，用来读取不同类型的长度</a><br>
      *
      * @param in
      * @return
      * @throws IOException
      */
+
     private int parseLong(ByteArrayIndexInputStream in) throws IOException {
         return in.readInt(4);
     }
 
     /**
-     * <a href="https://github.com/mysql/mysql-server/blob/8.0/strings/decimal.cc">mysql8.0源码，搜int decimal_bin_size_inline，来计算字节长度</a>
+     * 获取长度：<a href="https://github.com/mysql/mysql-server/blob/8.0/sql/log_event.cc">源码第1813行 ~ 2145行，即log_event_print_value方法，用来读取不同类型的长度</a><br>
+     * 获取值：{@link com.google.code.or.common.util.MySQLUtils#do(int)}
      *
      * @param in
      * @return
@@ -149,7 +175,8 @@ public class Row {
     }
 
     /**
-     * <a href="https://github.com/mysql/mysql-server/blob/8.0/strings/decimal.cc">mysql8.0源码，搜int decimal_bin_size_inline，来计算字节长度</a>
+     * 获取长度：<a href="https://github.com/mysql/mysql-server/blob/8.0/sql/log_event.cc">源码第1813行 ~ 2145行，即log_event_print_value方法，用来读取不同类型的长度</a><br>
+     * 获取值：<a href="https://github.com/mysql/mysql-server/blob/8.0/storage/ndb/clusterj/clusterj-tie/src/main/java/com/mysql/clusterj/tie/Utility.java">第385行</a>
      *
      * @param in
      * @return
@@ -159,13 +186,6 @@ public class Row {
         return in.readInt(4) * 1000L;
     }
 
-    /**
-     * <a href="https://github.com/mysql/mysql-server/blob/8.0/strings/decimal.cc">mysql8.0源码，搜int decimal_bin_size_inline，来计算字节长度</a>
-     *
-     * @param in
-     * @return
-     * @throws IOException
-     */
     private java.sql.Timestamp parseTimestamp2(int meta, ByteArrayIndexInputStream in) throws IOException {
         int timestampValueLength = 4;
         int millisecondsBytesLength = (meta + 1) / 2;// 纳秒长度
@@ -177,35 +197,14 @@ public class Row {
         return result;
     }
 
-    /**
-     * <a href="https://github.com/mysql/mysql-server/blob/8.0/strings/decimal.cc">mysql8.0源码，搜int decimal_bin_size_inline，来计算字节长度</a>
-     *
-     * @param in
-     * @return
-     * @throws IOException
-     */
     private float parseFloat(ByteArrayIndexInputStream in) throws IOException {
         return Float.intBitsToFloat(in.readInt(4));
     }
 
-    /**
-     * <a href="https://github.com/mysql/mysql-server/blob/8.0/strings/decimal.cc">mysql8.0源码，搜int decimal_bin_size_inline，来计算字节长度</a>
-     *
-     * @param in
-     * @return
-     * @throws IOException
-     */
     private long parseLongLong(ByteArrayIndexInputStream in) throws IOException {
         return in.readLong(8);
     }
 
-    /**
-     * <a href="https://github.com/mysql/mysql-server/blob/8.0/strings/decimal.cc">mysql8.0源码，搜int decimal_bin_size_inline，来计算字节长度</a>
-     *
-     * @param in
-     * @return
-     * @throws IOException
-     */
     private int parseInt24(ByteArrayIndexInputStream in) throws IOException {
         return in.readInt(3);
     }
@@ -231,7 +230,6 @@ public class Row {
     }
 
     /**
-     * <a href="https://github.com/mysql/mysql-server/blob/8.0/strings/decimal.cc">mysql8.0源码，搜int decimal_bin_size_inline，来计算字节长度</a><br>
      * 格式：HH:mm:ss<br>
      * 参考{@link com.google.code.or.common.util.MySQLUtils#toTime(int)}
      *
@@ -345,6 +343,18 @@ public class Row {
     }
 
     /**
+     * @param meta
+     * @param in
+     * @return
+     * @throws IOException
+     */
+    private BitSet parseBit(int meta, ByteArrayIndexInputStream in) throws IOException {
+        int bitBytesLength = ((meta >> 8) * 8) + (meta & 0xFF);
+        byte[] bitArray = in.readBytes((bitBytesLength + 7) / 8);
+        return BitMapUtil.parseBitMapByBigEndian(bitArray);
+    }
+
+    /**
      * <a href="https://github.com/mysql/mysql-server/blob/8.0/strings/decimal.cc">mysql8.0源码，搜int decimal_bin_size_inline，来计算字节长度</a>
      * <p>
      * 剩下的解析参考{@link com.google.code.or.common.util.MySQLUtils#toDecimal(int, int, byte[])}<br>
@@ -412,6 +422,36 @@ public class Row {
         return in.readBytes(blobLength);
     }
 
+    /**
+     * 返回enum下标，从1开始
+     *
+     * @param meta
+     * @param in
+     * @return
+     * @throws IOException
+     */
+    private Object parseEnum(int meta, ByteArrayIndexInputStream in) throws IOException {
+        return in.readInt(meta);
+    }
+
+    /**
+     * 返回set下标，从1开始
+     *
+     * @param meta
+     * @param in
+     * @return
+     * @throws IOException
+     */
+    private BitSet parseSet(int meta, ByteArrayIndexInputStream in) throws IOException {
+        byte[] result = in.readBytes(meta);
+        return BitMapUtil.parseBitMapByBigEndian(result);
+    }
+
+    private MysqlJson parseJson(int meta, ByteArrayIndexInputStream in) throws IOException {
+        byte[] result = in.readBytes(in.readInt(meta));
+        return new MysqlJson(result);
+    }
+
 
     /**
      * 解包fs，指mysql datetime、timestamp 后面的6位bit的精度
@@ -435,6 +475,52 @@ public class Row {
                 return bigEndianValue & 0xFFFFFF;
             default:
                 return 0;
+        }
+    }
+
+    /**
+     * <a href="https://github.com/mysql/mysql-server/blob/8.0/sql-common/json_binary.cc">源码第1320行为解析代码</a>
+     */
+    @Getter
+    public static class MysqlJson {
+
+        private final byte[] metaBytes;
+
+        public MysqlJson(byte[] bytes) throws IOException {
+            metaBytes = bytes;
+            ByteArrayIndexInputStream in = new ByteArrayIndexInputStream(bytes);
+            int type = in.read();// 第一个字节位type 源码第1340行
+            //TODO 有空再实现反序列化
+            switch (JsonTypeEnum.getByCode(type)) {
+                case SMALL_OBJECT:
+                    break;
+                case LARGE_OBJECT:
+                    break;
+                case SMALL_ARRAY:
+                    break;
+                case LARGE_ARRAY:
+                    break;
+                case LITERAL:
+                    break;
+                case INT16:
+                    break;
+                case UINT16:
+                    break;
+                case INT32:
+                    break;
+                case UINT32:
+                    break;
+                case INT64:
+                    break;
+                case UINT64:
+                    break;
+                case DOUBLE:
+                    break;
+                case STRING:
+                    break;
+                case OPAQUE:
+                    break;
+            }
         }
     }
 }

@@ -9,7 +9,10 @@ import java.util.Map;
 /**
  * @description: <a href="https://dev.mysql.com/doc/dev/mysql-server/latest/classbinary__log_1_1Table__map__event.html#Table_table_map_event_column_types">官方文档</a>，crtl+f搜Table_map_event column types
  * <p>
- *     <a href="https://github.com/mysql/mysql-server/blob/8.0/include/field_types.h">mysql8.0源码</a>
+ * <a href="https://github.com/mysql/mysql-server/blob/8.0/include/field_types.h">mysql8.0源码</a>
+ * </p>
+ * <p>
+ *     关于sizeOfMetadataInBytes的长度请查看<a href="https://github.com/mysql/mysql-server/blob/8.0/sql/rpl_utility.h">第864行 ~ 第926行</a>
  * </p>
  * @author: liuzijian
  * @time: 2023-09-08 13:44
@@ -74,18 +77,45 @@ public enum TableMapColumnTypeEnum {
     /**
      * metadate有1个字节记录fsp
      */
-    MYSQL_TYPE_DATETIME2(18,1),
+    MYSQL_TYPE_DATETIME2(18, 1),
     /**
      * metadate有1个字节记录fsp
      */
-    MYSQL_TYPE_TIME2(19,1),
+    MYSQL_TYPE_TIME2(19, 1),
+    MYSQL_TYPE_JSON(245, 1),
+
     /**
      * A 1 byte unsigned int representing the precision, followed by a 1 byte unsigned int representing the number of decimals.
      * <p>
      * 一个表示精度的1字节无符号整型，后跟一个表示小数数的1字节无符号整型。
      * </p>
      */
-    MYSQL_TYPE_NEWDECIMAL(246, 2),
+    MYSQL_TYPE_NEWDECIMAL(246,2),
+
+    /**
+     * This enumeration value is only used internally and cannot exist in a binlog.
+     * <p>
+     * 此枚举值仅在内部使用，不能存在于binlog中。
+     * </p>
+     */
+    MYSQL_TYPE_ENUM(247,2),
+
+    /**
+     * This enumeration value is only used internally and cannot exist in a binlog.
+     * <p>
+     * 此枚举值仅在内部使用，不能存在于binlog中。
+     * </p>
+     */
+    MYSQL_TYPE_SET(248,2),
+
+    /**
+     * This enumeration value is only used internally and cannot exist in a binlog.
+     * <p>
+     * 此枚举值仅在内部使用，不能存在于binlog中。
+     * </p>
+     */
+    MYSQL_TYPE_TINY_BLOB(249,1),
+
     /**
      * This enumeration value is only used internally and cannot exist in a binlog.
      * <p>
@@ -93,7 +123,8 @@ public enum TableMapColumnTypeEnum {
      * </p>
      */
     @Deprecated
-    MYSQL_TYPE_ENUM(247, -1),
+    MYSQL_TYPE_MEDIUM_BLOB(250,1),
+
     /**
      * This enumeration value is only used internally and cannot exist in a binlog.
      * <p>
@@ -101,38 +132,16 @@ public enum TableMapColumnTypeEnum {
      * </p>
      */
     @Deprecated
-    MYSQL_TYPE_SET(248, -1),
-    /**
-     * This enumeration value is only used internally and cannot exist in a binlog.
-     * <p>
-     * 此枚举值仅在内部使用，不能存在于binlog中。
-     * </p>
-     */
-    @Deprecated
-    MYSQL_TYPE_TINY_BLOB(249, -1),
-    /**
-     * This enumeration value is only used internally and cannot exist in a binlog.
-     * <p>
-     * 此枚举值仅在内部使用，不能存在于binlog中。
-     * </p>
-     */
-    @Deprecated
-    MYSQL_TYPE_MEDIUM_BLOB(250, -1),
-    /**
-     * This enumeration value is only used internally and cannot exist in a binlog.
-     * <p>
-     * 此枚举值仅在内部使用，不能存在于binlog中。
-     * </p>
-     */
-    @Deprecated
-    MYSQL_TYPE_LONG_BLOB(251, -1),
+    MYSQL_TYPE_LONG_BLOB(251,1),
+
     /**
      * The pack length, i.e., the number of bytes needed to represent the length of the blob: 1, 2, 3, or 4.
      * <p>
      * 包长度，即表示blob长度所需的字节数:1、2、3或4。
      * </p>
      */
-    MYSQL_TYPE_BLOB(252, 1),
+    MYSQL_TYPE_BLOB(252,1),
+
     /**
      * This is used to store both strings and enumeration values. <br>
      * The first byte is a enumeration value storing the real type, which may be either MYSQL_TYPE_VAR_STRING or MYSQL_TYPE_ENUM. The second byte is a 1 byte unsigned integer representing the field size, i.e., the number of bytes needed to store the length of the string.
@@ -141,7 +150,8 @@ public enum TableMapColumnTypeEnum {
      * 第一个字节是存储实际类型的枚举值，可以是MYSQL_TYPE_VAR_STRING或MYSQL_TYPE_ENUM。第二个字节是一个1字节的无符号整数，表示字段大小，即存储字符串长度所需的字节数。
      * </p>
      */
-    MYSQL_TYPE_VAR_STRING(253, 2),
+    MYSQL_TYPE_VAR_STRING(253,2),
+
     /**
      * The first byte is always MYSQL_TYPE_VAR_STRING (i.e., 253).<br>
      * The second byte is the field size, i.e., the number of bytes in the representation of size of the string: 3 or 4.
@@ -150,14 +160,15 @@ public enum TableMapColumnTypeEnum {
      * 第二个字节是字段大小，即表示字符串大小的字节数:3或4。
      * </p>
      */
-    MYSQL_TYPE_STRING(254, 2),
+    MYSQL_TYPE_STRING(254,2),
+
     /**
      * The pack length, i.e., the number of bytes needed to represent the length of the geometry: 1, 2, 3, or 4.
      * <p>
      * 包长度，即表示几何形状长度所需的字节数:1,2,3或4。
      * </p>
      */
-    MYSQL_TYPE_GEOMETRY(255, 1),
+    MYSQL_TYPE_GEOMETRY(255,1),
 
     ;
 
