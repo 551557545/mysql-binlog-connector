@@ -19,6 +19,7 @@ public abstract class AbstractBinlogEvent {
     private final BinlogEventTypeEnum eventType;
 
     protected final BinlogEnvironment environment;
+
     /**
      * @param in
      * @param bodyLength eventSize 减去 checkSum之后的值，而FormatDescriptionEvent事件会多减去一个1

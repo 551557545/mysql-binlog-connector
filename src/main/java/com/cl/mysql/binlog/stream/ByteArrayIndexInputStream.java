@@ -85,7 +85,7 @@ public class ByteArrayIndexInputStream extends InputStream {
 
     public String readLenencString() throws IOException {
         Number number = this.readLenencInteger();
-        if(number == null){
+        if (number == null) {
             return null;
         }
         int length = number.intValue();

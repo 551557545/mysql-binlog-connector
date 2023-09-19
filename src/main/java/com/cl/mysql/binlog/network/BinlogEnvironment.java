@@ -4,7 +4,10 @@ import cn.hutool.core.util.StrUtil;
 import com.cl.mysql.binlog.binlogEvent.TableMapEvent;
 import com.cl.mysql.binlog.constant.BinlogCheckSumEnum;
 import com.cl.mysql.binlog.exception.EnvironmentException;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
