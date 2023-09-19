@@ -157,7 +157,6 @@ public class MysqlBinLogConnector {
         // 向dump线程发送注册指令
         ComBinglogDumpCommand command = new ComBinglogDumpCommand(binlogFileName, binlogPosition, this.handshakeProtocol.getThreadId());
         channel.sendCommand(command);
-        //this.checkPacket(this.readDataContent());
         this.listenBinlog();
     }
 

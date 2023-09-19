@@ -32,6 +32,9 @@ public class BinlogHeader {
      */
     private int eventSize;
 
+    /**
+     * 下一个binlog事件的位点
+     */
     private Integer logPos;
 
     private Integer flags;

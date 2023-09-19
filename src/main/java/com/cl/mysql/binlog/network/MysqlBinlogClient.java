@@ -7,6 +7,17 @@ package com.cl.mysql.binlog.network;
  */
 public class MysqlBinlogClient {
 
+    private final ClientProperties properties;
+
     private MysqlBinLogConnector binlogSlaver;
 
+    private MysqlBinLogConnector sqlExecutor;
+
+    public MysqlBinlogClient(ClientProperties properties) {
+        this.properties = properties;
+    }
+
+    public void listenBinlog() {
+
+    }
 }

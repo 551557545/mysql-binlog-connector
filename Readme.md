@@ -63,11 +63,14 @@ binlog_format=ROW
 ```java
     public static void main(String[] args) throws Exception {
         MysqlBinLogConnector connector = MysqlBinLogConnector.openConnect("127.0.0.1", 3306, "你的数据库用户名", "你的数据库密码", false, null);
-        connector.sendComBingLogDump();
         connector.registerEventListener(new EventListener() {
             @Override
             public void listenAll(Event event) {
                 //监听所有事件
+                if(event.getEventType() == BinlogEventTypeEnum.ROTATE_EVENT){
+                    // 可以获取当前路由到的binlog文件名
+                }
+                event.getHeader().getLogPos();// 作用：获取下一个事件的位点，可以用来记录binlog位点信息，若程序发生错误退出，下次进入可以通过上次的位点继续监听。connector.sendComBingLogDump("binlog文件名","(int)binglog位点信息")
             }
 
             @Override
@@ -85,6 +88,7 @@ binlog_format=ROW
                 //监听新增事件
             }
         });
+        connector.sendComBingLogDump();// 会阻塞线程
     }
 ```
 
