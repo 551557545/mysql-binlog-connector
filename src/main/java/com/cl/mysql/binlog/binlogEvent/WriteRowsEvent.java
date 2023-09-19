@@ -3,6 +3,7 @@ package com.cl.mysql.binlog.binlogEvent;
 import com.cl.mysql.binlog.constant.BinlogCheckSumEnum;
 import com.cl.mysql.binlog.constant.BinlogEventTypeEnum;
 import com.cl.mysql.binlog.entity.Row;
+import com.cl.mysql.binlog.network.BinlogEnvironment;
 import com.cl.mysql.binlog.stream.ByteArrayIndexInputStream;
 import com.cl.mysql.binlog.util.BitMapUtil;
 import lombok.Getter;
@@ -32,8 +33,8 @@ public class WriteRowsEvent extends AbstractRowEvent {
      * @param bodyLength  eventSize 减去 checkSum之后的值，而FormatDescriptionEvent事件会多减去一个1
      * @param checkSum
      */
-    public WriteRowsEvent(BinlogEventTypeEnum binlogEvent, ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
-        super(binlogEvent, in, bodyLength, checkSum);
+    public WriteRowsEvent(BinlogEnvironment environment, BinlogEventTypeEnum binlogEvent, ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
+        super(environment, binlogEvent, in, bodyLength, checkSum);
     }
 
     @Override
@@ -54,7 +55,7 @@ public class WriteRowsEvent extends AbstractRowEvent {
         while (in.available() > 0) {
             rows.add(new RowEntry(
                     null,
-                    new Row(this.tableId, in)
+                    new Row(environment.getTableInfo().get(this.tableId), in)
             ));
         }
     }

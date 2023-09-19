@@ -4,6 +4,7 @@ import com.cl.mysql.binlog.constant.BinlogCheckSumEnum;
 import com.cl.mysql.binlog.constant.BinlogEventTypeEnum;
 import com.cl.mysql.binlog.constant.TableMapColumnTypeEnum;
 import com.cl.mysql.binlog.constant.TableMapOptMetadaTypeEnum;
+import com.cl.mysql.binlog.network.BinlogEnvironment;
 import com.cl.mysql.binlog.stream.ByteArrayIndexInputStream;
 import com.cl.mysql.binlog.util.BitMapUtil;
 import com.cl.mysql.binlog.util.CommonUtil;
@@ -23,8 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Getter
 public class TableMapEvent extends AbstractBinlogEvent {
-
-    private static Map<Long, TableMapEvent> tableInfo = new ConcurrentHashMap<>();
 
     private final Long tableId;
 
@@ -73,8 +72,8 @@ public class TableMapEvent extends AbstractBinlogEvent {
      * @param in
      * @param bodyLength eventSize 减去 checkSum之后的值
      */
-    public TableMapEvent(BinlogEventTypeEnum binlogEvent, ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
-        super(binlogEvent, in, bodyLength, checkSum);
+    public TableMapEvent(BinlogEnvironment environment, BinlogEventTypeEnum binlogEvent, ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
+        super(environment, binlogEvent, in, bodyLength, checkSum);
         this.tableId = in.readLong(6);
         this.flags = in.readInt(2);
 
@@ -128,11 +127,7 @@ public class TableMapEvent extends AbstractBinlogEvent {
         }
 
         // 缓存起来
-        tableInfo.put(this.tableId, this);
-    }
-
-    public static TableMapEvent getTableInfo(Long tableId) {
-        return tableInfo.get(tableId);
+        environment.getTableInfo().put(this.tableId, this);
     }
 
     @Getter

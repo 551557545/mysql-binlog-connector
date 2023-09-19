@@ -3,6 +3,7 @@ package com.cl.mysql.binlog.binlogEvent;
 import com.cl.mysql.binlog.constant.BinlogCheckSumEnum;
 import com.cl.mysql.binlog.constant.BinlogEventTypeEnum;
 import com.cl.mysql.binlog.entity.Row;
+import com.cl.mysql.binlog.network.BinlogEnvironment;
 import com.cl.mysql.binlog.stream.ByteArrayIndexInputStream;
 import com.cl.mysql.binlog.util.BitMapUtil;
 import lombok.Getter;
@@ -44,8 +45,8 @@ public class UpdateRowsEvent extends AbstractRowEvent {
      * @param bodyLength eventSize 减去 checkSum之后的值
      * @param checkSum
      */
-    public UpdateRowsEvent(BinlogEventTypeEnum binlogEvent, ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
-        super(binlogEvent, in, bodyLength, checkSum);
+    public UpdateRowsEvent(BinlogEnvironment environment, BinlogEventTypeEnum binlogEvent, ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
+        super(environment, binlogEvent, in, bodyLength, checkSum);
     }
 
     @Override
@@ -65,8 +66,8 @@ public class UpdateRowsEvent extends AbstractRowEvent {
 
         rows = new ArrayList<>();
         while (in.available() > 0) {
-            Row before = new Row(this.tableId, in);
-            Row after = new Row(this.tableId, in);
+            Row before = new Row(environment.getTableInfo().get(this.tableId), in);
+            Row after = new Row(environment.getTableInfo().get(this.tableId), in);
             rows.add(new RowEntry(before, after));
         }
     }

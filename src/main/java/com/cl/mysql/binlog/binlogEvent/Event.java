@@ -3,6 +3,7 @@ package com.cl.mysql.binlog.binlogEvent;
 import cn.hutool.core.util.ReflectUtil;
 import com.cl.mysql.binlog.constant.BinlogCheckSumEnum;
 import com.cl.mysql.binlog.constant.BinlogEventTypeEnum;
+import com.cl.mysql.binlog.network.BinlogEnvironment;
 import com.cl.mysql.binlog.stream.ByteArrayIndexInputStream;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -31,7 +32,11 @@ public class Event {
         this.body = body;
     }
 
-    public static Event V4Deserialization(ByteArrayIndexInputStream indexInputStream, BinlogCheckSumEnum checkSum) throws IOException {
+    public static Event V4Deserialization(BinlogEnvironment environment, ByteArrayIndexInputStream indexInputStream) throws IOException {
+        BinlogCheckSumEnum checkSum = environment.getCheckSum();
+        if (checkSum == null) {
+            throw new RuntimeException("checkSum不能为空");
+        }
         // Network streams are requested with COM_BINLOG_DUMP and prepend each Binlog Event with 00 OK-byte.
         // 这个success 是文档上说 每一个binlog报文都会在前面带上一个字节的 ok byte
         // 文档：https://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_replication.html#sect_protocol_replication_binlog_stream #Binlog Network Stream
@@ -89,7 +94,13 @@ public class Event {
             if (eventEnum == BinlogEventTypeEnum.FORMAT_DESCRIPTION_EVENT) {
                 checkSumLength += 1;// 加上（A）位长度
             }
-            body = ReflectUtil.newInstance(eventEnum.getBinlogEventClass(), eventEnum, indexInputStream, eventSize - commonHdrLength - checkSumLength, checkSum);
+            body = ReflectUtil.newInstance(eventEnum.getBinlogEventClass(),
+                    environment,
+                    eventEnum,
+                    indexInputStream,
+                    eventSize - commonHdrLength - checkSumLength,
+                    checkSum
+            );
         }
         Event result = new Event(header, body);
         result.setEventType(eventEnum);

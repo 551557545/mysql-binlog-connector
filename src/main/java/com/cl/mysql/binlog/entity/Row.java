@@ -32,8 +32,7 @@ public class Row {
     private final List<Object> rowValue;
 
 
-    public Row(Long tableId, ByteArrayIndexInputStream in) throws IOException {
-        TableMapEvent tableMapEvent = TableMapEvent.getTableInfo(tableId);
+    public Row(TableMapEvent tableMapEvent, ByteArrayIndexInputStream in) throws IOException {
         List<Integer> metaDataList = tableMapEvent.getMetadata();
         int columnCount = tableMapEvent.getColumnCount();
         rowValue = new ArrayList<>(columnCount);
@@ -164,7 +163,7 @@ public class Row {
 
     /**
      * 获取长度：<a href="https://github.com/mysql/mysql-server/blob/8.0/sql/log_event.cc">源码第1813行 ~ 2145行，即log_event_print_value方法，用来读取不同类型的长度</a><br>
-     * 获取值：{@link com.google.code.or.common.util.MySQLUtils#do(int)}
+     * 获取值：
      *
      * @param in
      * @return

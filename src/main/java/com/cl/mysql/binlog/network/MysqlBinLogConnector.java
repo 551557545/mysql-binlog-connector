@@ -10,7 +10,6 @@ import com.cl.mysql.binlog.network.protocol.InitialHandshakeProtocol;
 import com.cl.mysql.binlog.network.protocol.packet.TextResultSetPacket;
 import com.cl.mysql.binlog.stream.ByteArrayIndexInputStream;
 import lombok.AccessLevel;
-import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,8 +18,6 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * @description: 连接器
@@ -37,36 +34,14 @@ public class MysqlBinLogConnector {
     @Setter(AccessLevel.PRIVATE)
     private InitialHandshakeProtocol handshakeProtocol;
 
-    private final String host;
-
-    private final int port;
-
-    private final String userName;
-
-    private final String password;
-
-    private final boolean ssl;
-
-    private final String dataBaseScram;
-
-    private boolean successLogin;
-
-    @Getter
-    private int clientCapabilities;
-
-    private BinlogCheckSumEnum checkSum;
-
     private BinlogRowMetadataEnum rowMetadata;
 
     private List<EventListener> eventListenerList = new ArrayList<>();
 
-    private MysqlBinLogConnector(String host, int port, String userName, String password, boolean ssl, String dataBaseScram) {
-        this.host = host;
-        this.port = port;
-        this.userName = userName;
-        this.password = password;
-        this.ssl = ssl;
-        this.dataBaseScram = dataBaseScram;
+    private final BinlogEnvironment environment;
+
+    private MysqlBinLogConnector(ClientProperties properties) {
+        this.environment = properties.convertToEnvironment();
     }
 
 
@@ -85,7 +60,15 @@ public class MysqlBinLogConnector {
      * @throws KeyManagementException
      */
     public static MysqlBinLogConnector openConnect(String host, int port, String userName, String password, boolean ssl, String dataBaseScram) throws IOException, NoSuchAlgorithmException, KeyManagementException {
-        MysqlBinLogConnector mysqlBinLogConnector = new MysqlBinLogConnector(host, port, userName, password, ssl, dataBaseScram);
+        ClientProperties tempProperties = new ClientProperties();
+        tempProperties.setHost(host);
+        tempProperties.setPort(port);
+        tempProperties.setUserName(userName);
+        tempProperties.setPassword(password);
+        tempProperties.setSsl(ssl);
+        tempProperties.setDataBaseScram(dataBaseScram);
+
+        MysqlBinLogConnector mysqlBinLogConnector = new MysqlBinLogConnector(tempProperties);
         mysqlBinLogConnector.setChannel(new PacketChannel(host, port));
         // 解析握手协议
         byte[] bytes = mysqlBinLogConnector.readDataContent();
@@ -127,21 +110,21 @@ public class MysqlBinLogConnector {
      * @throws IOException
      */
     public void sendHandshakeResponse() throws IOException {
-        if (successLogin) {
+        if (this.environment.isSuccessLogin()) {
             return;
         }
         HandShakeResponseCommand command = new HandShakeResponseCommand(
                 this.handshakeProtocol,
-                this.userName,
-                this.password,
-                this.ssl,
-                this.dataBaseScram,
+                this.environment.getUserName(),
+                this.environment.getPassword(),
+                this.environment.isSsl(),
+                this.environment.getDataBaseScram(),
                 this.channel
         );
-        command.setClientCapabilities(this.clientCapabilities);
+        command.setClientCapabilities(this.environment.getClientCapabilities());
         command.send();
-        this.clientCapabilities = command.getClientCapabilities();
-        successLogin = true;
+        this.environment.setClientCapabilities(command.getClientCapabilities());
+        this.environment.setSuccessLogin(true);
         log.info("mysql连接成功");
     }
 
@@ -156,16 +139,17 @@ public class MysqlBinLogConnector {
         if (StrUtil.isBlank(binlogFileName) && binlogPosition <= 0) {
             ComQueryCommand queryCommand = new ComQueryCommand(Sql.show_master_status);
             channel.sendCommand(queryCommand);
-            TextResultSetPacket textResultSetPacket = channel.readTextResultSetPacket(this.clientCapabilities);
+            TextResultSetPacket textResultSetPacket = channel.readTextResultSetPacket(this.environment.getClientCapabilities());
             BinlogInfo binlogInfo = new BinlogInfo(textResultSetPacket);
             binlogFileName = binlogInfo.getFileName();
             binlogPosition = binlogInfo.getPosition();
         }
         // 查询当前mysql服务器的checkSum
-        this.checkSum = this.fecthCheckSum();
-        if (this.checkSum != BinlogCheckSumEnum.NONE) {
+        BinlogCheckSumEnum checkSum = this.fecthCheckSum();
+        environment.setCheckSum(checkSum);
+        if (checkSum != BinlogCheckSumEnum.NONE) {
             // 设置会话checkSum
-            this.setCheckSum(this.checkSum);
+            this.setCheckSum(checkSum);
         }
         this.rowMetadata = this.fecthBinlogRowMetadata();
         // 设置从服务器连接的uuid
@@ -181,7 +165,7 @@ public class MysqlBinLogConnector {
         while (true) {
             byte[] bytes = channel.readBinlogStream();
             ByteArrayIndexInputStream indexInputStream = this.checkBinlogPacket(bytes);
-            Event event = Event.V4Deserialization(indexInputStream, this.checkSum);
+            Event event = Event.V4Deserialization(this.environment, indexInputStream);
             for (EventListener listener : this.eventListenerList) {
                 listener.listenAll(event);
                 if (BinlogEventTypeEnum.isUpdateEvent(event.getEventType())) {
@@ -204,7 +188,7 @@ public class MysqlBinLogConnector {
     private BinlogCheckSumEnum fecthCheckSum() throws IOException {
         ComQueryCommand queryCommand = new ComQueryCommand(Sql.show_global_variables_like_binlog_checksum);
         channel.sendCommand(queryCommand);
-        TextResultSetPacket textResultSetPacket = channel.readTextResultSetPacket(this.clientCapabilities);
+        TextResultSetPacket textResultSetPacket = channel.readTextResultSetPacket(this.environment.getClientCapabilities());
         return BinlogCheckSumEnum.getEnum(textResultSetPacket);
     }
 
@@ -217,7 +201,7 @@ public class MysqlBinLogConnector {
     private BinlogRowMetadataEnum fecthBinlogRowMetadata() throws IOException {
         ComQueryCommand queryCommand = new ComQueryCommand(Sql.show_global_variables_like_binlog_row_metadata);
         channel.sendCommand(queryCommand);
-        TextResultSetPacket textResultSetPacket = channel.readTextResultSetPacket(this.clientCapabilities);
+        TextResultSetPacket textResultSetPacket = channel.readTextResultSetPacket(this.environment.getClientCapabilities());
         return BinlogRowMetadataEnum.getEnum(textResultSetPacket);
     }
 
@@ -276,17 +260,13 @@ public class MysqlBinLogConnector {
      * @throws IOException
      */
     private void checkPacket(byte[] bytes) throws IOException {
-        this.channel.checkPacket(bytes, this.clientCapabilities);
+        this.channel.checkPacket(bytes, this.environment.getClientCapabilities());
     }
 
     private ByteArrayIndexInputStream checkBinlogPacket(byte[] bytes) throws IOException {
         this.checkPacket(bytes);
         ByteArrayIndexInputStream indexInputStream = new ByteArrayIndexInputStream(bytes);
         return indexInputStream;
-    }
-
-    public void addClientCapabilities(CapabilitiesFlagsEnum e) {
-        this.clientCapabilities = CapabilitiesFlagsEnum.add(this.clientCapabilities, e);
     }
 
     public void registerEventListener(EventListener eventListener) {
@@ -296,7 +276,7 @@ public class MysqlBinLogConnector {
     public TextResultSetPacket getTableColumns(String dbName, String tableName) throws IOException {
         ComQueryCommand command = new ComQueryCommand(StrUtil.indexedFormat(Sql.show_columns_from_db_table, dbName, tableName));
         channel.sendCommand(command);
-        TextResultSetPacket textResultSetPacket = channel.readTextResultSetPacket(this.clientCapabilities);
+        TextResultSetPacket textResultSetPacket = channel.readTextResultSetPacket(this.environment.getClientCapabilities());
         return textResultSetPacket;
     }
 

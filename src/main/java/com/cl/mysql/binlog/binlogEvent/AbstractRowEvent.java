@@ -3,6 +3,7 @@ package com.cl.mysql.binlog.binlogEvent;
 import com.cl.mysql.binlog.constant.BinlogCheckSumEnum;
 import com.cl.mysql.binlog.constant.BinlogEventTypeEnum;
 import com.cl.mysql.binlog.entity.Row;
+import com.cl.mysql.binlog.network.BinlogEnvironment;
 import com.cl.mysql.binlog.stream.ByteArrayIndexInputStream;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -34,8 +35,8 @@ public abstract class AbstractRowEvent extends AbstractBinlogEvent {
      * @param bodyLength  eventSize 减去 checkSum之后的值，而FormatDescriptionEvent事件会多减去一个1
      * @param checkSum
      */
-    public AbstractRowEvent(BinlogEventTypeEnum binlogEvent, ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
-        super(binlogEvent, in, bodyLength, checkSum);
+    public AbstractRowEvent(BinlogEnvironment environment, BinlogEventTypeEnum binlogEvent, ByteArrayIndexInputStream in, int bodyLength, BinlogCheckSumEnum checkSum) throws IOException {
+        super(environment, binlogEvent, in, bodyLength, checkSum);
 
         this.tableId = in.readLong(6);
         this.flags = in.readInt(2);
