@@ -128,14 +128,18 @@ public class MysqlBinLogConnector {
         log.info("mysql连接成功");
     }
 
-    public void sendComBingLogDump() throws IOException {
+    public void listen() throws IOException {
         this.sendComBingLogDump(null, -1);
+    }
+
+    public void listen(String binlogFileName, int binlogPosition) throws IOException {
+        this.sendComBingLogDump(binlogFileName, binlogPosition);
     }
 
     /**
      * 请求mysql服务器获取binlog的dump线程
      */
-    public void sendComBingLogDump(String binlogFileName, int binlogPosition) throws IOException {
+    private void sendComBingLogDump(String binlogFileName, int binlogPosition) throws IOException {
         if (StrUtil.isBlank(binlogFileName) && binlogPosition <= 0) {
             ComQueryCommand queryCommand = new ComQueryCommand(Sql.show_master_status);
             channel.sendCommand(queryCommand);

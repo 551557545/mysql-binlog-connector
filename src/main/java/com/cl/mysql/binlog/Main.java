@@ -1,9 +1,7 @@
 package com.cl.mysql.binlog;
 
 import com.cl.mysql.binlog.binlogEvent.Event;
-import com.cl.mysql.binlog.constant.BinlogEventTypeEnum;
 import com.cl.mysql.binlog.listener.EventListener;
-import com.cl.mysql.binlog.network.ClientProperties;
 import com.cl.mysql.binlog.network.MysqlBinLogConnector;
 
 public class Main {
@@ -16,7 +14,6 @@ public class Main {
             public void listenAll(Event event) {
                 //监听所有事件
 
-                System.out.println(1);
             }
 
             @Override
@@ -34,6 +31,6 @@ public class Main {
                 //监听新增事件
             }
         });
-        connector.sendComBingLogDump();
+        connector.listen();
     }
 }

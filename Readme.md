@@ -70,7 +70,7 @@ binlog_format=ROW
                 if(event.getEventType() == BinlogEventTypeEnum.ROTATE_EVENT){
                     // 可以获取当前路由到的binlog文件名
                 }
-                event.getHeader().getLogPos();// 作用：获取下一个事件的位点，可以用来记录binlog位点信息，若程序发生错误退出，下次进入可以通过上次的位点继续监听。connector.sendComBingLogDump("binlog文件名","(int)binglog位点信息")
+                event.getHeader().getLogPos();// 作用：获取下一个事件的位点，可以用来记录binlog位点信息，若程序发生错误退出，下次进入可以通过上次的位点继续监听。connector.listen("binlog文件名","(int)binglog位点信息")
             }
 
             @Override
@@ -88,7 +88,7 @@ binlog_format=ROW
                 //监听新增事件
             }
         });
-        connector.sendComBingLogDump();// 会阻塞线程
+        connector.listen();// 会阻塞线程
     }
 ```
 
