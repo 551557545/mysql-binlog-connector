@@ -36,6 +36,7 @@ public class ClientProperties {
     protected BinlogEnvironment convertToEnvironment() {
         BinlogEnvironment e = new BinlogEnvironment();
         BeanUtil.copyProperties(this,e);
+        e.checkValue();
         return e;
     }
 }
