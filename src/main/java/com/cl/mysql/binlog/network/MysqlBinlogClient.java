@@ -25,7 +25,7 @@ public class MysqlBinlogClient {
 
     public void listenBinlog(EventListener eventListener) throws IOException, NoSuchAlgorithmException, KeyManagementException {
         binlogSlaver = new MysqlBinLogConnector(this.properties);
-        binlogSlaver.initAndLoginToMysql();
+        binlogSlaver.loginToMysql();
         binlogSlaver.registerEventListener(eventListener);
         binlogSlaver.listen();
     }

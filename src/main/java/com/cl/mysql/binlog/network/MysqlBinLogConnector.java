@@ -69,11 +69,11 @@ public class MysqlBinLogConnector {
         tempProperties.setDataBaseScram(dataBaseScram);
 
         MysqlBinLogConnector mysqlBinLogConnector = new MysqlBinLogConnector(tempProperties);
-        mysqlBinLogConnector.initAndLoginToMysql();
+        mysqlBinLogConnector.loginToMysql();
         return mysqlBinLogConnector;
     }
 
-    protected void initAndLoginToMysql() throws IOException, NoSuchAlgorithmException, KeyManagementException {
+    protected void loginToMysql() throws IOException, NoSuchAlgorithmException, KeyManagementException {
         this.channel = new PacketChannel(this.environment.getHost(), this.environment.getPort());
         // 解析握手协议
         byte[] bytes = this.readDataContent();
