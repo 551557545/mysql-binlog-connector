@@ -1,5 +1,11 @@
 package com.cl.mysql.binlog.network;
 
+import com.cl.mysql.binlog.listener.EventListener;
+
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+
 /**
  * @description:
  * @author: liuzijian
@@ -17,7 +23,10 @@ public class MysqlBinlogClient {
         this.properties = properties;
     }
 
-    public void listenBinlog() {
-
+    public void listenBinlog(EventListener eventListener) throws IOException, NoSuchAlgorithmException, KeyManagementException {
+        binlogSlaver = new MysqlBinLogConnector(this.properties);
+        binlogSlaver.initAndLoginToMysql();
+        binlogSlaver.registerEventListener(eventListener);
+        binlogSlaver.listen();
     }
 }

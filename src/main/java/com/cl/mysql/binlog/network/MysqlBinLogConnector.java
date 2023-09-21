@@ -40,7 +40,7 @@ public class MysqlBinLogConnector {
 
     private final BinlogEnvironment environment;
 
-    private MysqlBinLogConnector(ClientProperties properties) {
+    protected MysqlBinLogConnector(ClientProperties properties) {
         this.environment = properties.convertToEnvironment();
     }
 
@@ -69,16 +69,20 @@ public class MysqlBinLogConnector {
         tempProperties.setDataBaseScram(dataBaseScram);
 
         MysqlBinLogConnector mysqlBinLogConnector = new MysqlBinLogConnector(tempProperties);
-        mysqlBinLogConnector.setChannel(new PacketChannel(host, port));
-        // 解析握手协议
-        byte[] bytes = mysqlBinLogConnector.readDataContent();
-        mysqlBinLogConnector.checkPacket(bytes);
-        mysqlBinLogConnector.setHandshakeProtocol(new InitialHandshakeProtocol(bytes));
-        if (ssl) {
-            mysqlBinLogConnector.tryChangeToSSL();
-        }
-        mysqlBinLogConnector.sendHandshakeResponse();
+        mysqlBinLogConnector.initAndLoginToMysql();
         return mysqlBinLogConnector;
+    }
+
+    protected void initAndLoginToMysql() throws IOException, NoSuchAlgorithmException, KeyManagementException {
+        this.channel = new PacketChannel(this.environment.getHost(), this.environment.getPort());
+        // 解析握手协议
+        byte[] bytes = this.readDataContent();
+        this.checkPacket(bytes);
+        this.setHandshakeProtocol(new InitialHandshakeProtocol(bytes));
+        if (this.environment.isSsl()) {
+            this.tryChangeToSSL();
+        }
+        this.sendHandshakeResponse();
     }
 
     /**
