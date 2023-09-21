@@ -52,7 +52,7 @@ public enum BinlogEventTypeEnum {
     WRITE_ROWS_EVENT_V2(30, WriteRowsEvent.class, PostHeaderLength.ROWS_HEADER_LEN_V2),
     UPDATE_ROWS_EVENT_V2(31, UpdateRowsEvent.class, PostHeaderLength.ROWS_HEADER_LEN_V2),
     DELETE_ROWS_EVENT_V2(32, DeleteRowsEvent.class, PostHeaderLength.ROWS_HEADER_LEN_V2),
-    GTID_LOG_EVENT(33, null, PostHeaderLength.POST_HEADER_LENGTH),
+    GTID_LOG_EVENT(33, GtidEvent.class, PostHeaderLength.POST_HEADER_LENGTH),
     ANONYMOUS_GTID_LOG_EVENT(34, null, PostHeaderLength.POST_HEADER_LENGTH),
     PREVIOUS_GTIDS_LOG_EVENT(35, null, PostHeaderLength.IGNORABLE_HEADER_LEN),
     TRANSACTION_CONTEXT_EVENT(36, null, PostHeaderLength.TRANSACTION_CONTEXT_HEADER_LEN),

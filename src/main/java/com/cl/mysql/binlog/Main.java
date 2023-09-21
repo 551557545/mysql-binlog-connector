@@ -13,7 +13,7 @@ public class Main {
             @Override
             public void listenAll(Event event) {
                 //监听所有事件
-
+                System.out.println(1);
             }
 
             @Override

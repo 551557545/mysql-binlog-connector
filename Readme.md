@@ -88,4 +88,6 @@ binlog_format=ROW
     }
 ```
 
+## 7、暂未解决的问题
 
+- com_binlog_dump_gtid命令的实现，gtidSet的数据结构尚未清楚
